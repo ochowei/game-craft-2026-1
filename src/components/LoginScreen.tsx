@@ -22,7 +22,7 @@ export default function LoginScreen() {
     <div className="flex items-center justify-center h-screen bg-surface-container-lowest">
       <div className="w-full max-w-sm mx-auto px-6 text-center">
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-blue-300 tracking-wider font-headline mb-3">GameCraft Editor</h1>
+          <h1 className="text-4xl font-bold text-primary tracking-wider font-headline mb-3">GameCraft Editor</h1>
           <p className="text-on-surface-variant font-medium text-sm">Design, prototype, and playtest board games — all in one place.</p>
         </div>
 
@@ -32,7 +32,7 @@ export default function LoginScreen() {
           className="w-full flex items-center justify-center gap-3 bg-surface-container-high hover:bg-surface-bright text-on-surface px-6 py-3 rounded-xl font-bold text-sm transition-all border border-outline-variant/20 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         >
           {signingIn ? (
-            <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
           ) : (
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

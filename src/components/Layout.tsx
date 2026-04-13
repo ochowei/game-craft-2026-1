@@ -22,36 +22,36 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Top Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-black/20 flex justify-between items-center px-6 h-16 border-b border-slate-800/50">
+      <nav className="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-xl shadow-xl shadow-surface-dim/20 flex justify-between items-center px-6 h-16 border-b border-outline-variant/50">
         <div className="flex items-center gap-8">
-          <span className="text-xl font-bold text-blue-300 tracking-wider font-headline">GameCraft Editor</span>
+          <span className="text-xl font-bold text-primary tracking-wider font-headline">GameCraft Editor</span>
           <div className="hidden md:flex items-center gap-6 font-headline tracking-tight">
-            <button className="text-slate-400 hover:text-white transition-colors">Project</button>
-            <button className="text-slate-400 hover:text-white transition-colors">Assets</button>
-            <button className="text-blue-400 border-b-2 border-blue-400 pb-1">History</button>
+            <button className="text-on-surface-variant hover:text-on-surface transition-colors">Project</button>
+            <button className="text-on-surface-variant hover:text-on-surface transition-colors">Assets</button>
+            <button className="text-primary border-b-2 border-primary pb-1">History</button>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 mr-4 border-r border-slate-800 pr-4">
-            <button className="text-slate-400 hover:text-white transition-colors">
+          <div className="flex gap-2 mr-4 border-r border-outline-variant pr-4">
+            <button className="text-on-surface-variant hover:text-on-surface transition-colors">
               <span className="material-symbols-outlined">save</span>
             </button>
-            <button className="text-slate-400 hover:text-white transition-colors">
+            <button className="text-on-surface-variant hover:text-on-surface transition-colors">
               <span className="material-symbols-outlined">cloud_upload</span>
             </button>
-            <button 
+            <button
               onClick={() => onScreenChange('settings')}
-              className={`text-slate-400 hover:text-white transition-colors ${activeScreen === 'settings' ? 'text-blue-400' : ''}`}
+              className={`text-on-surface-variant hover:text-on-surface transition-colors ${activeScreen === 'settings' ? 'text-primary' : ''}`}
             >
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
-          <button className="px-4 py-1.5 rounded text-slate-400 font-medium hover:text-white transition-colors">Export</button>
+          <button className="px-4 py-1.5 rounded text-on-surface-variant font-medium hover:text-on-surface transition-colors">Export</button>
           
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
+          <div className="flex items-center gap-3 pl-4 border-l border-outline-variant">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-on-surface leading-tight">{user?.displayName}</p>
-                <button onClick={signOut} className="text-[10px] text-slate-500 hover:text-error transition-colors uppercase tracking-widest font-bold">Logout</button>
+                <button onClick={signOut} className="text-[10px] text-on-surface-variant hover:text-error transition-colors uppercase tracking-widest font-bold">Logout</button>
               </div>
               <img src={user?.photoURL || ''} alt="Profile" className="w-8 h-8 rounded-full border border-primary/20" referrerPolicy="no-referrer" />
             </div>
@@ -64,10 +64,10 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
 
       <div className="flex flex-1 pt-16 min-h-0">
         {/* Side Navigation */}
-        <aside className="w-20 md:w-64 bg-slate-900 flex flex-col py-4 border-r border-slate-800/50 min-h-0">
+        <aside className="w-20 md:w-64 bg-surface-container flex flex-col py-4 border-r border-outline-variant/50 min-h-0">
           <div className="px-6 mb-8 hidden md:block">
-            <h2 className="text-lg font-black text-blue-400 font-headline">Monopoly Revive</h2>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Draft v1.2</p>
+            <h2 className="text-lg font-black text-primary font-headline">Monopoly Revive</h2>
+            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Draft v1.2</p>
           </div>
           <nav className="flex-1 space-y-1">
             {navItems.map((item) => (
@@ -76,8 +76,8 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
                 onClick={() => onScreenChange(item.id)}
                 className={`w-full flex items-center gap-4 py-3 px-4 transition-all ease-in-out duration-300 font-body text-sm font-semibold uppercase tracking-widest ${
                   activeScreen === item.id
-                    ? 'bg-gradient-to-br from-blue-600 to-blue-400 text-white rounded-lg mx-2 w-[calc(100%-16px)]'
-                    : 'text-slate-500 hover:text-slate-300'
+                    ? 'bg-primary text-on-primary-container rounded-lg mx-2 w-[calc(100%-16px)]'
+                    : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -86,15 +86,15 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
             ))}
           </nav>
           <div className="mt-auto px-4 space-y-4">
-            <button className="w-full py-3 bg-slate-800 rounded-xl text-primary font-bold text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors">
+            <button className="w-full py-3 bg-surface-container-high rounded-xl text-primary font-bold text-xs uppercase tracking-widest hover:bg-surface-bright transition-colors">
               New Object
             </button>
-            <div className="pt-4 border-t border-slate-800 space-y-1">
-              <button className="w-full flex items-center gap-4 py-2 text-slate-500 hover:text-slate-300 px-2 transition-all">
+            <div className="pt-4 border-t border-outline-variant space-y-1">
+              <button className="w-full flex items-center gap-4 py-2 text-on-surface-variant hover:text-on-surface px-2 transition-all">
                 <span className="material-symbols-outlined">help_outline</span>
                 <span className="hidden md:inline text-xs font-semibold uppercase tracking-widest">Help</span>
               </button>
-              <button className="w-full flex items-center gap-4 py-2 text-slate-500 hover:text-slate-300 px-2 transition-all">
+              <button className="w-full flex items-center gap-4 py-2 text-on-surface-variant hover:text-on-surface px-2 transition-all">
                 <span className="material-symbols-outlined">chat_bubble_outline</span>
                 <span className="hidden md:inline text-xs font-semibold uppercase tracking-widest">Feedback</span>
               </button>
