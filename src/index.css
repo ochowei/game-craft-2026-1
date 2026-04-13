@@ -32,6 +32,35 @@
   --color-outline-variant: #434656;
 }
 
+.light {
+  --color-surface: #f8f9fc;
+  --color-surface-container: #eef0f4;
+  --color-surface-container-low: #f3f4f8;
+  --color-surface-container-high: #e4e6ea;
+  --color-surface-container-highest: #d8dadf;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-bright: #d0d2d7;
+  --color-surface-dim: #d8dadf;
+
+  --color-on-surface: #1a1c1e;
+  --color-on-surface-variant: #44474f;
+
+  --color-primary: #2b5cd6;
+  --color-primary-container: #d8e2ff;
+  --color-on-primary-container: #001a41;
+
+  --color-secondary: #006d3a;
+  --color-secondary-container: #9cf5b7;
+  --color-on-secondary-container: #00210e;
+
+  --color-tertiary: #7c5800;
+  --color-tertiary-container: #ffdeaa;
+
+  --color-error: #ba1a1a;
+  --color-outline: #74777f;
+  --color-outline-variant: #c4c6d0;
+}
+
 @layer base {
   html, body, #root {
     @apply h-full overflow-hidden;
