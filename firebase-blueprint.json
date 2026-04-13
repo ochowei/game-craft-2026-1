@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "userSettings": {
+      "title": "User Settings",
+      "description": "User preferences and settings for the GameCraft Editor.",
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "description": "The preferred interface language.",
+          "enum": ["en", "zh-TW", "zh-CN", "ja", "ko"]
+        },
+        "theme": {
+          "type": "string",
+          "description": "The preferred UI theme mode.",
+          "enum": ["dark", "light", "system"]
+        },
+        "autosave": {
+          "type": "boolean",
+          "description": "Whether autosave is enabled."
+        },
+        "gridSnap": {
+          "type": "boolean",
+          "description": "Whether grid snapping is enabled."
+        },
+        "highPerformance": {
+          "type": "boolean",
+          "description": "Whether high performance mode is enabled."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last time the settings were updated."
+        }
+      },
+      "required": ["language", "theme", "autosave", "gridSnap", "highPerformance"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/preferences": {
+      "schema": "userSettings",
+      "description": "The settings for a specific user."
+    }
+  }
+}

@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}/settings
+    // Document ID: preferences
+    // Fields:
+    //   - language: string (en, zh-TW, zh-CN, ja, ko)
+    //   - theme: string (dark, light, system)
+    //   - autosave: bool
+    //   - gridSnap: bool
+    //   - highPerformance: bool
+    //   - updatedAt: timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserSettings(data) {
+      return data.keys().hasAll(['language', 'theme', 'autosave', 'gridSnap', 'highPerformance']) &&
+             data.language in ['en', 'zh-TW', 'zh-CN', 'ja', 'ko'] &&
+             data.theme in ['dark', 'light', 'system'] &&
+             data.autosave is bool &&
+             data.gridSnap is bool &&
+             data.highPerformance is bool;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId}/settings/preferences {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserSettings(request.resource.data);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
