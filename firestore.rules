@@ -40,6 +40,13 @@ service cloud.firestore {
              data.highPerformance is bool;
     }
 
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['displayName', 'email', 'photoURL']) &&
+             data.displayName is string &&
+             data.email is string &&
+             data.photoURL is string;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -47,6 +54,11 @@ service cloud.firestore {
     match /users/{userId}/settings/preferences {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUserSettings(request.resource.data);
+    }
+
+    match /users/{userId}/profile/main {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserProfile(request.resource.data);
     }
 
     // Default deny

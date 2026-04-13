@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { User, db } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 
-interface SettingsProps {
-  user: User | null;
-}
-
-export default function Settings({ user }: SettingsProps) {
+export default function Settings() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState({
     language: 'en',
     theme: 'dark',

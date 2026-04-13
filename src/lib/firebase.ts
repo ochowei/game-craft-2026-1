@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, getDocFromServer, serverTimestamp } from 'firebase/firestore';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -35,6 +35,28 @@ export const signInWithGoogle = async () => {
 };
 
 export const logout = () => signOut(auth);
+
+export async function provisionUserProfile(user: User) {
+  const profileRef = doc(db, 'users', user.uid, 'profile', 'main');
+  const profileSnap = await getDoc(profileRef);
+
+  if (profileSnap.exists()) {
+    await setDoc(profileRef, {
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+      lastLoginAt: serverTimestamp(),
+    }, { merge: true });
+  } else {
+    await setDoc(profileRef, {
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    });
+  }
+}
 
 // Test connection to Firestore
 async function testConnection() {
