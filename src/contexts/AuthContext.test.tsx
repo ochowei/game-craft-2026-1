@@ -24,19 +24,19 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
   GoogleAuthProvider: vi.fn(),
-  signInWithPopup: (...args: any[]) => mockSignInWithPopup(...args),
-  signOut: (...args: any[]) => mockSignOut(...args),
-  onAuthStateChanged: (...args: any[]) => mockOnAuthStateChanged(...args),
+  signInWithPopup: mockSignInWithPopup,
+  signOut: mockSignOut,
+  onAuthStateChanged: mockOnAuthStateChanged,
 }));
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => ({})),
-  doc: (...args: any[]) => mockDoc(...args),
-  getDoc: (...args: any[]) => mockGetDoc(...args),
-  setDoc: (...args: any[]) => mockSetDoc(...args),
+  doc: mockDoc,
+  getDoc: mockGetDoc,
+  setDoc: mockSetDoc,
   onSnapshot: vi.fn(),
-  getDocFromServer: (...args: any[]) => mockGetDocFromServer(...args),
-  serverTimestamp: () => mockServerTimestamp(),
+  getDocFromServer: mockGetDocFromServer,
+  serverTimestamp: mockServerTimestamp,
 }));
 
 import { AuthProvider, useAuth } from './AuthContext';
