@@ -11,6 +11,6 @@
 ## 3. Verification
 
 - [x] 3.1 Run full test suite — all tests pass
-- [ ] 3.2 Set theme to light, refresh page, verify no dark flash
-- [ ] 3.3 Clear localStorage, refresh page, verify dark default applies
-- [ ] 3.4 Test in private/incognito mode — verify graceful fallback to dark
+- [x] 3.2 Set theme to light, refresh page, verify no dark flash
+- [x] 3.3 Clear localStorage, refresh page, verify dark default then Firestore corrects to light
+- [x] 3.4 Test in private/incognito mode — verify graceful fallback to dark
