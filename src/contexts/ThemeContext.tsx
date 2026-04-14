@@ -18,8 +18,16 @@ function resolveTheme(preference: ThemePreference, osDark: boolean): ResolvedThe
   return preference;
 }
 
+function getCachedTheme(): ThemePreference {
+  try {
+    const cached = localStorage.getItem('theme-resolved');
+    if (cached === 'dark' || cached === 'light') return cached;
+  } catch {}
+  return 'dark';
+}
+
 export function ThemeProvider({ children, user }: { children: React.ReactNode; user: User | null }) {
-  const [theme, setTheme] = useState<ThemePreference>('dark');
+  const [theme, setTheme] = useState<ThemePreference>(getCachedTheme);
   const [osDark, setOsDark] = useState(() =>
     window.matchMedia('(prefers-color-scheme: dark)').matches
   );
