@@ -34,6 +34,7 @@ describe('ThemeProvider', () => {
     matchMediaListeners = [];
     originalMatchMedia = window.matchMedia;
     document.documentElement.className = '';
+    localStorage.clear();
 
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: false,
@@ -134,6 +135,32 @@ describe('ThemeProvider', () => {
 
     expect(screen.getByTestId('resolved').textContent).toBe('dark');
     expect(document.documentElement.className).toBe('dark');
+  });
+
+  it('caches resolved theme in localStorage', () => {
+    mockOnSnapshot.mockImplementation((_ref: any, callback: any) => {
+      callback(mockDocSnapshot(true, { theme: 'light' }));
+      return vi.fn();
+    });
+
+    const user = createMockUser();
+    render(
+      <ThemeProvider user={user as any}>
+        <TestConsumer />
+      </ThemeProvider>
+    );
+
+    expect(localStorage.getItem('theme-resolved')).toBe('light');
+  });
+
+  it('caches dark theme in localStorage when no user', () => {
+    render(
+      <ThemeProvider user={null}>
+        <TestConsumer />
+      </ThemeProvider>
+    );
+
+    expect(localStorage.getItem('theme-resolved')).toBe('dark');
   });
 
   it('defaults to dark when Firestore doc does not exist', () => {

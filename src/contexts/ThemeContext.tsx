@@ -50,10 +50,11 @@ export function ThemeProvider({ children, user }: { children: React.ReactNode; u
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Apply resolved theme to <html>
+  // Apply resolved theme to <html> and cache in localStorage
   const resolved = resolveTheme(theme, osDark);
   useEffect(() => {
     document.documentElement.className = resolved;
+    try { localStorage.setItem('theme-resolved', resolved); } catch {}
   }, [resolved]);
 
   return (
