@@ -35,7 +35,6 @@ export function ThemeProvider({ children, user }: { children: React.ReactNode; u
   // Subscribe to Firestore settings
   useEffect(() => {
     if (!user) {
-      setTheme('dark');
       return;
     }
     const settingsRef = doc(db, 'users', user.uid, 'settings', 'preferences');
