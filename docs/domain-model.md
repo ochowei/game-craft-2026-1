@@ -20,6 +20,12 @@ A finished, publishable artifact exported from a Project. Represents a playable 
 
 > Status: not yet implemented.
 
+### Deck
+
+A named collection of Cards within a Project. Each Deck groups related cards (e.g., Chance deck, Community Chest deck). Board tiles reference Decks via a "draw card" action.
+
+> Status: not yet implemented. Cards currently use a flat `Card[]` with a `type` field (`chance` | `community-chest`) to distinguish categories. A formal Deck aggregate has not been introduced.
+
 ### Board
 
 The game board. Encompasses:
@@ -52,7 +58,7 @@ Global game mechanics and settings that apply to the entire game. Includes:
 
 Rules do NOT include tile-specific effects (those belong to Board) or card-specific effects (those belong to Cards).
 
-> Status: RulesEditor exists.
+> Status: RulesEditor exists. Win/loss conditions are not yet modeled in `domain/rules.ts`.
 
 ### Tokens
 
@@ -66,7 +72,7 @@ All game objects that are neither board tiles nor cards. Broad category that inc
 
 Each Token's associated assets (images, icons) are managed directly within the Tokens editor.
 
-> Status: not yet implemented.
+> Status: implemented. `domain/tokens.ts` defines Token types (pawn, currency, dice, marker) with `TokensContext` and `TokensEditor`.
 
 ### Library
 
@@ -74,7 +80,7 @@ The user's personal collection of reusable components. Stores custom card styles
 
 Library is user-created content, not official/built-in templates.
 
-> Status: currently implemented as TemplateLibrary (official templates); needs repositioning to match this definition.
+> Status: implemented. `domain/library.ts` defines user-created items (card-template, tile-preset, color-palette) with `LibraryContext` and `Library` component. Seed data provides starter examples but the model supports user-created content.
 
 ### History
 
@@ -108,7 +114,7 @@ The core domain. Users create and edit board game designs.
 
 - **Project** (aggregate root) — contains Board, Cards, Rules, Tokens
 - **Board** — contains Tiles; each Tile has layout position, appearance, and effects
-- **Cards** — contains Decks; each Deck contains Cards
+- **Cards** — contains Decks; each Deck contains Cards (Deck not yet implemented; currently a flat `Card[]` with `type` field)
 - **Rules** — a single value object per Project representing global game settings
 - **Tokens** — contains Token definitions; each Token has appearance and game semantics
 
@@ -116,7 +122,7 @@ The core domain. Users create and edit board game designs.
 
 - A Board tile's "draw card" effect must reference an existing Deck.
 - Rules define valid ranges (e.g., minPlayers <= maxPlayers).
-- Each Deck has at least one Card.
+- Each Deck has at least one Card. (Not yet enforced; Deck not implemented.)
 
 ### Library Context
 
