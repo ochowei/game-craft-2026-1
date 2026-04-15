@@ -2,7 +2,7 @@
 
 ## Goal
 
-Set up Firebase Emulator Suite for local development so that dev work does not touch production data. Include a workflow to export production Firestore data and import it into the emulator.
+Set up Firebase Emulator Suite for local development so that dev work does not touch production data. Include a seed script to populate the emulator with test data.
 
 ## Prerequisites
 
@@ -10,7 +10,6 @@ Install the following on the development machine:
 
 - **Java JRE 11+** — `sudo apt install default-jre` (required by Firestore emulator)
 - **Firebase CLI** — `npm install -g firebase-tools`
-- **gcloud CLI** — for exporting production Firestore data
 
 ## Firebase CLI Initialization
 
@@ -18,6 +17,7 @@ Run `firebase init` in the project root to generate:
 
 - `firebase.json` — emulator configuration (ports, enabled services)
 - `.firebaserc` — binds the project to a Firebase project ID
+- `firestore.rules` — Firestore security rules (start with open access, tighten later)
 
 ### Emulator Ports
 
@@ -45,50 +45,56 @@ if (import.meta.env.VITE_USE_EMULATOR === 'true') {
 
 This ensures:
 - `npm run dev` connects to production (unchanged behavior)
-- `npm run dev:emulator` connects to local emulators
+- `npm run dev:emu` connects to local emulators
+
+### Named Database Consideration
+
+The codebase uses `VITE_FIREBASE_FIRESTORE_DATABASE_ID` to connect to a named Firestore database. The emulator defaults to `(default)`. Two options:
+
+1. **Override in `.env.local`** — set `VITE_FIREBASE_FIRESTORE_DATABASE_ID=(default)` when using the emulator
+2. **Configure `firebase.json`** — specify the named database in the emulator config (requires Firebase CLI support)
+
+Recommend option 1 for simplicity. Document this in `.env.example`.
 
 ## npm Scripts
 
-### One-command start
-
-```json
-"dev:emulator": "VITE_USE_EMULATOR=true firebase emulators:exec --import=./emulator-data --export-on-exit=./emulator-data 'vite --port=3000 --host=0.0.0.0'"
-```
-
-Starts emulators, runs Vite inside them, and auto-exports data on shutdown. Single terminal.
-
-### Separate control
+### Separate terminals (recommended)
 
 ```json
 "emulator:start": "firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data",
-"emulator:export": "gcloud firestore export gs://<bucket>/exports/ && gsutil -m cp -r gs://<bucket>/exports/ ./emulator-data/"
+"dev:emu": "VITE_USE_EMULATOR=true vite --port=3000 --host=0.0.0.0"
 ```
 
-- Terminal 1: `npm run emulator:start`
-- Terminal 2: `npm run dev` (with `VITE_USE_EMULATOR=true` set manually or via `.env.local`)
-- On-demand: `npm run emulator:export` to refresh production data
+- Terminal 1: `npm run emulator:start` — starts emulators, persists data across restarts
+- Terminal 2: `npm run dev:emu` — starts Vite connected to emulators
 
-## Production Data Export & Import
+Each process is independent: restart Vite without restarting the emulator, and vice versa.
 
-### Export flow (Production to local)
+## Seed Script (replaces Production Data Export)
 
-1. `gcloud firestore export gs://<your-bucket>/exports/` — export Firestore data to a GCS bucket
-2. `gsutil -m cp -r gs://<your-bucket>/exports/ ./emulator-data/` — download from GCS to local
-3. The GCS export format is not directly compatible with the emulator's `--import` format. To convert: start the emulator without `--import`, use a script to read the GCS export and write documents into the running emulator via the Firestore client SDK (connecting to `localhost:8080`), then stop the emulator with `--export-on-exit` to save in the correct format. This is a one-time setup step; subsequent imports reuse the saved `emulator-data/` directory.
+Instead of exporting production Firestore data (complex GCS export format conversion, IAM permissions, PII concerns), use a seed script to populate the emulator with controlled test data.
 
-### Import flow (Local to Emulator)
+### `scripts/seed-emulator.ts`
 
-`firebase emulators:start --import=./emulator-data`
+A script that uses the Firebase Admin SDK to connect to the running emulator at `localhost:8080` and insert sample documents (users, game data, etc.). Run once after a fresh emulator start:
 
-### Persist emulator changes
+```json
+"emulator:seed": "FIRESTORE_EMULATOR_HOST=localhost:8080 tsx scripts/seed-emulator.ts"
+```
 
-`firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data`
+Benefits over production data export:
+- No `gcloud` CLI or IAM setup required
+- No PII in local dev
+- Deterministic, version-controlled test data
+- No format conversion between GCS export and emulator import
 
-Data survives across emulator restarts.
+### Emulator Data Persistence
 
-### Auth data caveat
+With `--import=./emulator-data --export-on-exit=./emulator-data`, seeded data survives across emulator restarts. Only need to re-seed after deleting `emulator-data/`.
 
-`gcloud firestore export` only exports Firestore documents, not Firebase Auth users. Auth accounts must be created manually in the emulator UI or by signing in through the app while the emulator is running.
+### Auth Data
+
+Auth accounts must be created manually in the emulator UI (`localhost:4000`) or by signing in through the app while the emulator is running. The seed script can also create test users via the Auth emulator REST API.
 
 ## Local Data Directory
 
@@ -98,10 +104,30 @@ emulator-data/          (gitignored, not committed)
 ├── firestore_export/   (Firestore documents)
 ```
 
-## .gitignore additions
+## Firestore Rules
+
+`firebase init` generates `firestore.rules`. Start with open access for development:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Tighten rules later when ready to test security rules against the emulator.
+
+## .gitignore Additions
 
 ```
 emulator-data/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 ```
 
 ## Existing Files Modified
@@ -109,8 +135,8 @@ emulator-data/
 | File | Change |
 |------|--------|
 | `src/lib/firebase.ts` | Add emulator connection logic |
-| `package.json` | Add `dev:emulator`, `emulator:start`, `emulator:export` scripts |
-| `.gitignore` | Add `emulator-data/` |
+| `package.json` | Add `emulator:start`, `dev:emu`, `emulator:seed` scripts |
+| `.gitignore` | Add `emulator-data/`, debug logs |
 
 ## New Files Created
 
@@ -118,3 +144,10 @@ emulator-data/
 |------|---------|
 | `firebase.json` | Emulator configuration (generated by `firebase init`) |
 | `.firebaserc` | Firebase project binding (generated by `firebase init`) |
+| `firestore.rules` | Firestore security rules (generated by `firebase init`) |
+| `scripts/seed-emulator.ts` | Populates emulator with test data |
+
+## Out of Scope
+
+- **Production data export/import** — Deferred. Can revisit when schema stabilizes and there's a real need.
+- **Test environment integration** — Current tests use mocks (`src/test/firebase-mocks.ts`). Emulator-backed integration tests are a separate effort.
