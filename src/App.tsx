@@ -12,6 +12,8 @@ import { RulesProvider } from './contexts/RulesContext';
 import { CardsProvider } from './contexts/CardsContext';
 import { BoardProvider } from './contexts/BoardContext';
 import { LibraryProvider } from './contexts/LibraryContext';
+import TokensEditor from './components/TokensEditor';
+import { TokensProvider } from './contexts/TokensContext';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -42,11 +44,7 @@ export default function App() {
       case 'settings':
         return <Settings />;
       case 'tokens':
-        return (
-          <div className="flex items-center justify-center h-full text-on-surface-variant font-headline text-2xl opacity-50">
-            Tokens Editor Coming Soon
-          </div>
-        );
+        return <TokensEditor />;
       default:
         return <RulesEditor />;
     }
@@ -57,9 +55,11 @@ export default function App() {
       <CardsProvider>
         <BoardProvider>
           <LibraryProvider>
-            <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
-              {renderScreen()}
-            </Layout>
+            <TokensProvider>
+              <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+                {renderScreen()}
+              </Layout>
+            </TokensProvider>
           </LibraryProvider>
         </BoardProvider>
       </CardsProvider>
