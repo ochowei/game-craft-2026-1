@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { Card, CardType, DEFAULT_CARDS } from '../domain/cards';
+import { loadState, saveState } from '../lib/storage';
+
+const STORAGE_KEY = 'gamecraft:cards';
 
 interface CardsState {
   cards: Card[];
@@ -80,8 +83,19 @@ const initialState: CardsState = {
   selectedCardId: getFirstCardId(DEFAULT_CARDS, 'chance'),
 };
 
+function createInitialState(): CardsState {
+  const cards = loadState<Card[]>(STORAGE_KEY, DEFAULT_CARDS);
+  return {
+    cards,
+    activeDeckType: 'chance',
+    selectedCardId: getFirstCardId(cards, 'chance'),
+  };
+}
+
 export function CardsProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(cardsReducer, initialState);
+  const [state, dispatch] = useReducer(cardsReducer, null, createInitialState);
+
+  useEffect(() => { saveState(STORAGE_KEY, state.cards); }, [state.cards]);
 
   return (
     <CardsContext.Provider value={{ ...state, dispatch }}>

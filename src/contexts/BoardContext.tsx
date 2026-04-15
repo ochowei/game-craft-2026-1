@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { Tile, RentStructure, DEFAULT_BOARD } from '../domain/board';
+import { loadState, saveState } from '../lib/storage';
+
+const STORAGE_KEY = 'gamecraft:board';
 
 interface BoardState {
   tiles: Tile[];
@@ -45,13 +48,17 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
   }
 }
 
-const initialState: BoardState = {
-  tiles: DEFAULT_BOARD,
-  selectedTileId: null,
-};
+function createInitialState(): BoardState {
+  return {
+    tiles: loadState<Tile[]>(STORAGE_KEY, DEFAULT_BOARD),
+    selectedTileId: null,
+  };
+}
 
 export function BoardProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(boardReducer, initialState);
+  const [state, dispatch] = useReducer(boardReducer, null, createInitialState);
+
+  useEffect(() => { saveState(STORAGE_KEY, state.tiles); }, [state.tiles]);
 
   return (
     <BoardContext.Provider value={{ ...state, dispatch }}>

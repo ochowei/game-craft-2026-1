@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { LibraryItem, LibraryItemType, DEFAULT_LIBRARY } from '../domain/library';
+import { loadState, saveState } from '../lib/storage';
+
+const STORAGE_KEY = 'gamecraft:library';
 
 type LibraryFilter = LibraryItemType | 'all';
 
@@ -35,13 +38,17 @@ function libraryReducer(state: LibraryState, action: LibraryAction): LibraryStat
   }
 }
 
-const initialState: LibraryState = {
-  items: DEFAULT_LIBRARY,
-  activeFilter: 'all',
-};
+function createInitialState(): LibraryState {
+  return {
+    items: loadState<LibraryItem[]>(STORAGE_KEY, DEFAULT_LIBRARY),
+    activeFilter: 'all',
+  };
+}
 
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(libraryReducer, initialState);
+  const [state, dispatch] = useReducer(libraryReducer, null, createInitialState);
+
+  useEffect(() => { saveState(STORAGE_KEY, state.items); }, [state.items]);
 
   return (
     <LibraryContext.Provider value={{ ...state, dispatch }}>

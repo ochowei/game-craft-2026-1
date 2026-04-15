@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { Rules, DEFAULT_RULES } from '../domain/rules';
+import { loadState, saveState } from '../lib/storage';
+
+const STORAGE_KEY = 'gamecraft:rules';
 
 type RulesAction =
   | { type: 'UPDATE_FIELD'; section: keyof Rules; field: string; value: unknown }
@@ -30,7 +33,9 @@ function rulesReducer(state: Rules, action: RulesAction): Rules {
 }
 
 export function RulesProvider({ children }: { children: React.ReactNode }) {
-  const [rules, dispatch] = useReducer(rulesReducer, DEFAULT_RULES);
+  const [rules, dispatch] = useReducer(rulesReducer, DEFAULT_RULES, () => loadState(STORAGE_KEY, DEFAULT_RULES));
+
+  useEffect(() => { saveState(STORAGE_KEY, rules); }, [rules]);
 
   return (
     <RulesContext.Provider value={{ rules, dispatch }}>

@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { Token, TokenCategory, DEFAULT_TOKENS } from '../domain/tokens';
+import { loadState, saveState } from '../lib/storage';
+
+const STORAGE_KEY = 'gamecraft:tokens';
 
 type CategoryFilter = TokenCategory | 'all';
 
@@ -76,14 +79,19 @@ function tokensReducer(state: TokensState, action: TokensAction): TokensState {
   }
 }
 
-const initialState: TokensState = {
-  tokens: DEFAULT_TOKENS,
-  activeCategory: 'all',
-  selectedTokenId: DEFAULT_TOKENS[0]?.id ?? null,
-};
+function createInitialState(): TokensState {
+  const tokens = loadState<Token[]>(STORAGE_KEY, DEFAULT_TOKENS);
+  return {
+    tokens,
+    activeCategory: 'all',
+    selectedTokenId: tokens[0]?.id ?? null,
+  };
+}
 
 export function TokensProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(tokensReducer, initialState);
+  const [state, dispatch] = useReducer(tokensReducer, null, createInitialState);
+
+  useEffect(() => { saveState(STORAGE_KEY, state.tokens); }, [state.tokens]);
 
   return (
     <TokensContext.Provider value={{ ...state, dispatch }}>
