@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Screen } from '../types';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,20 @@ interface LayoutProps {
 
 export default function Layout({ children, activeScreen, onScreenChange }: LayoutProps) {
   const { user, signOut } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   const navItems: { id: Screen; icon: string; label: string }[] = [
     { id: 'board', icon: 'grid_view', label: 'Board' },
     { id: 'cards', icon: 'style', label: 'Cards' },
@@ -32,7 +46,7 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 mr-4 border-r border-outline-variant pr-4">
+          <div className="hidden md:flex gap-2 mr-4 border-r border-outline-variant pr-4">
             <button className="text-on-surface-variant hover:text-on-surface transition-colors">
               <span className="material-symbols-outlined">save</span>
             </button>
@@ -46,19 +60,58 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
               <span className="material-symbols-outlined">settings</span>
             </button>
           </div>
-          <button className="px-4 py-1.5 rounded text-on-surface-variant font-medium hover:text-on-surface transition-colors">Export</button>
-          
-          <div className="flex items-center gap-3 pl-4 border-l border-outline-variant">
-              <div className="text-right hidden sm:block">
+          <button className="hidden md:block px-4 py-1.5 rounded text-on-surface-variant font-medium hover:text-on-surface transition-colors">Export</button>
+
+          <div className="flex items-center gap-3 md:pl-4 md:border-l border-outline-variant">
+              <div className="text-right hidden md:block">
                 <p className="text-xs font-bold text-on-surface leading-tight">{user?.displayName}</p>
                 <button onClick={signOut} className="text-[10px] text-on-surface-variant hover:text-error transition-colors uppercase tracking-widest font-bold">Logout</button>
               </div>
-              <img src={user?.photoURL || ''} alt="Profile" className="w-8 h-8 rounded-full border border-primary/20" referrerPolicy="no-referrer" />
+              <img src={user?.photoURL || ''} alt="Profile" className="w-8 h-8 rounded-full border border-primary/20 shrink-0" referrerPolicy="no-referrer" />
             </div>
 
-          <button className="bg-gradient-to-br from-primary-container to-primary px-5 py-1.5 rounded-xl text-on-primary-container font-bold text-sm uppercase tracking-wider active:scale-95 duration-200 shadow-lg shadow-primary-container/20">
+          <button className="hidden md:inline-flex bg-gradient-to-br from-primary-container to-primary px-5 py-1.5 rounded-xl text-on-primary-container font-bold text-sm uppercase tracking-wider active:scale-95 duration-200 shadow-lg shadow-primary-container/20">
             Playtest
           </button>
+
+          <div className="relative md:hidden" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined">{menuOpen ? 'close' : 'menu'}</span>
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container rounded-xl shadow-xl shadow-surface-dim/30 border border-outline-variant/50 py-2 z-50">
+                <button onClick={() => { setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm">
+                  <span className="material-symbols-outlined text-[20px]">save</span>
+                  Save
+                </button>
+                <button onClick={() => { setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm">
+                  <span className="material-symbols-outlined text-[20px]">cloud_upload</span>
+                  Cloud Upload
+                </button>
+                <button onClick={() => { onScreenChange('settings'); setMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high transition-colors text-sm ${activeScreen === 'settings' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}>
+                  <span className="material-symbols-outlined text-[20px]">settings</span>
+                  Settings
+                </button>
+                <div className="my-1 border-t border-outline-variant/50" />
+                <button onClick={() => { setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm">
+                  <span className="material-symbols-outlined text-[20px]">ios_share</span>
+                  Export
+                </button>
+                <button onClick={() => { setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-primary hover:bg-surface-container-high transition-colors text-sm font-bold">
+                  <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+                  Playtest
+                </button>
+                <div className="my-1 border-t border-outline-variant/50" />
+                <button onClick={() => { signOut(); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-error hover:bg-surface-container-high transition-colors text-sm">
+                  <span className="material-symbols-outlined text-[20px]">logout</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
