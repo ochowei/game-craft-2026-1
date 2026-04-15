@@ -8,6 +8,8 @@ import TemplateLibrary from './components/TemplateLibrary';
 import BoardEditor from './components/BoardEditor';
 import CardDesigner from './components/CardDesigner';
 import Settings from './components/Settings';
+import { RulesProvider } from './contexts/RulesContext';
+import { CardsProvider } from './contexts/CardsContext';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -49,8 +51,12 @@ export default function App() {
   };
 
   return (
-    <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
-      {renderScreen()}
-    </Layout>
+    <RulesProvider>
+      <CardsProvider>
+        <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+          {renderScreen()}
+        </Layout>
+      </CardsProvider>
+    </RulesProvider>
   );
 }
