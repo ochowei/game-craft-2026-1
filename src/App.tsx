@@ -4,13 +4,14 @@ import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import LoginScreen from './components/LoginScreen';
 import RulesEditor from './components/RulesEditor';
-import TemplateLibrary from './components/TemplateLibrary';
+import Library from './components/Library';
 import BoardEditor from './components/BoardEditor';
 import CardDesigner from './components/CardDesigner';
 import Settings from './components/Settings';
 import { RulesProvider } from './contexts/RulesContext';
 import { CardsProvider } from './contexts/CardsContext';
 import { BoardProvider } from './contexts/BoardContext';
+import { LibraryProvider } from './contexts/LibraryContext';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -37,7 +38,7 @@ export default function App() {
       case 'rules':
         return <RulesEditor />;
       case 'library':
-        return <TemplateLibrary />;
+        return <Library />;
       case 'settings':
         return <Settings />;
       case 'tokens':
@@ -55,9 +56,11 @@ export default function App() {
     <RulesProvider>
       <CardsProvider>
         <BoardProvider>
-          <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
-            {renderScreen()}
-          </Layout>
+          <LibraryProvider>
+            <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+              {renderScreen()}
+            </Layout>
+          </LibraryProvider>
         </BoardProvider>
       </CardsProvider>
     </RulesProvider>
