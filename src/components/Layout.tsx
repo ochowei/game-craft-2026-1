@@ -39,11 +39,6 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
       <nav className="fixed top-0 w-full z-50 bg-surface-container/80 backdrop-blur-xl shadow-xl shadow-surface-dim/20 flex justify-between items-center px-6 h-16 border-b border-outline-variant/50">
         <div className="flex items-center gap-8">
           <span className="text-xl font-bold text-primary tracking-wider font-headline">GameCraft Editor</span>
-          <div className="hidden md:flex items-center gap-6 font-headline tracking-tight">
-            <button className="text-on-surface-variant hover:text-on-surface transition-colors">Project</button>
-            <button className="text-on-surface-variant hover:text-on-surface transition-colors">Assets</button>
-            <button className="text-primary border-b-2 border-primary pb-1">History</button>
-          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex gap-2 mr-4 border-r border-outline-variant pr-4">
