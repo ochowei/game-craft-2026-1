@@ -10,6 +10,7 @@ import CardDesigner from './components/CardDesigner';
 import Settings from './components/Settings';
 import { RulesProvider } from './contexts/RulesContext';
 import { CardsProvider } from './contexts/CardsContext';
+import { BoardProvider } from './contexts/BoardContext';
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -53,9 +54,11 @@ export default function App() {
   return (
     <RulesProvider>
       <CardsProvider>
-        <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
-          {renderScreen()}
-        </Layout>
+        <BoardProvider>
+          <Layout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+            {renderScreen()}
+          </Layout>
+        </BoardProvider>
       </CardsProvider>
     </RulesProvider>
   );
