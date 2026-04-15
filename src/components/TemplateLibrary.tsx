@@ -60,10 +60,10 @@ export default function TemplateLibrary() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-8 pb-32">
+    <div className="max-w-7xl mx-auto p-4 md:p-8 pb-32">
       <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-5xl font-headline font-bold text-on-surface tracking-tight mb-2">Template Library</h1>
+          <h1 className="text-3xl md:text-5xl font-headline font-bold text-on-surface tracking-tight mb-2">Template Library</h1>
           <p className="text-on-surface-variant font-medium">Explore curated maps or jumpstart your design with official templates.</p>
         </div>
         <button className="flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-primary-container to-primary text-on-primary-container rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-primary-container/40 transition-all active:scale-95 group">

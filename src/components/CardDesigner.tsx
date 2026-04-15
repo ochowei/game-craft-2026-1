@@ -3,8 +3,8 @@ import React from 'react';
 export default function CardDesigner() {
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
-        <header className="mb-10 flex justify-between items-end">
+      <div className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+        <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
           <div>
             <h1 className="text-4xl font-headline font-bold text-on-surface tracking-tight mb-2">Card Deck Designer</h1>
             <p className="text-on-surface-variant font-body">Refine your Chance and Community Chest encounters.</p>

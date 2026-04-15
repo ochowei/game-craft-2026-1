@@ -44,7 +44,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8">
+    <div className="max-w-4xl mx-auto p-4 md:p-8">
       <header className="mb-10">
         <h1 className="text-4xl font-headline font-bold text-on-surface tracking-tight mb-2">Settings</h1>
         <p className="text-on-surface-variant font-medium">Configure your editor preferences and application behavior.</p>

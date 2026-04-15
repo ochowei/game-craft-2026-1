@@ -2,8 +2,8 @@ import React from 'react';
 
 export default function RulesEditor() {
   return (
-    <div className="max-w-4xl mx-auto p-8 pb-32">
-      <header className="mb-10 flex justify-between items-end">
+    <div className="max-w-4xl mx-auto p-4 md:p-8 pb-32">
+      <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
           <h1 className="text-4xl font-headline font-bold text-on-surface tracking-tight mb-2">Game Rules & Logic</h1>
           <p className="text-on-surface-variant font-medium">Define the core mechanics and economic constraints of your project.</p>
