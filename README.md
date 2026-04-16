@@ -12,8 +12,7 @@ Built with React 19, Vite, Tailwind CSS v4, and Firebase.
    ```
    npm install
    ```
-2. Set the `GEMINI_API_KEY` in `.env.local`
-3. Start the dev server:
+2. Start the dev server:
    ```
    npm run dev
    ```
