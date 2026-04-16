@@ -10,13 +10,19 @@ Established: 2026-04-15
 
 ### Project
 
-A board game design workspace. Acts as the top-level container for all design elements: Board, Cards, Rules, and Tokens. A single Project can export multiple Games (e.g., different versions or editions).
+A board game design workspace. Acts as the top-level container for all design elements: Board, Cards, Rules, and Tokens. A single Project can publish multiple Boxes (e.g., different versions or editions).
 
 > Status: concept reserved, not yet implemented as a standalone feature.
 
+### Box
+
+A finished, publishable artifact exported from a Project. A read-only package containing all the design elements (Board, Cards, Rules, Tokens) needed to play. One Project can produce many Boxes.
+
+> Status: not yet implemented.
+
 ### Game
 
-A finished, publishable artifact exported from a Project. Represents a playable board game. One Project can produce many Games.
+An instance of playing a Box. Represents a single play session with mutable runtime state: player positions, money, cards drawn, turn order, etc. One Box can instantiate many Games. Games support save and load.
 
 > Status: not yet implemented.
 
@@ -154,16 +160,30 @@ Change tracking and version management within a Project.
 
 ### Publishing Context
 
-Exporting a Project into a playable Game.
+Exporting a Project into a publishable Box.
 
 **Aggregates:**
 
-- **Game** — an exported artifact derived from a Project at a point in time
+- **Box** — an exported artifact derived from a Project at a point in time
 
 **Key invariants:**
 
-- A Game is a read-only snapshot; editing happens in the Project.
-- A Game references the Version Snapshot it was built from (if applicable).
+- A Box is a read-only snapshot; editing happens in the Project.
+- A Box references the Version Snapshot it was built from (if applicable).
+
+### Play Context
+
+Playing a Box as a Game, with runtime state and save/load.
+
+**Aggregates:**
+
+- **Game** (aggregate root) — a play session instantiated from a Box, containing all mutable runtime state
+
+**Key invariants:**
+
+- A Game is always associated with exactly one Box.
+- A Game's state can be saved to and loaded from storage.
+- The Box definition is immutable during play; only Game state changes.
 
 ---
 
@@ -174,7 +194,8 @@ Project (1) ──contains──> (1) Board
 Project (1) ──contains──> (N) Decks of Cards
 Project (1) ──contains──> (1) Rules
 Project (1) ──contains──> (N) Tokens
-Project (1) ──exports───> (N) Games
+Project (1) ──publishes──> (N) Boxes
+Box (1) ──instantiates──> (N) Games
 
 Board Tile ──triggers──> Card Draw (references a Deck)
 
@@ -183,7 +204,8 @@ Library ──provides templates to──> Project (copy, not reference)
 History/EditLog ──tracks──> Project edits (in-memory)
 History/VersionSnapshot ──captures──> Project state (persisted)
 
-Game ──derived from──> Project (+ optional VersionSnapshot reference)
+Box ──derived from──> Project (+ optional VersionSnapshot reference)
+Game ──plays──> Box (read-only reference)
 ```
 
 ---
@@ -198,3 +220,4 @@ Game ──derived from──> Project (+ optional VersionSnapshot reference)
 | Library = user content only | Official templates are a separate concern; Library focuses on the user's own reusable elements. |
 | Cards independent from Board | Clean separation of concerns; Board tiles only reference Decks via a "draw" action. |
 | Rules = global only | Tile-specific and card-specific effects belong to Board and Cards respectively, keeping Rules focused. |
+| Game renamed to Box; Game = play session | "Game" matches user mental model for "something I play." "Box" is the published package — like a board game box on the shelf. Separates design artifact from runtime play state. |
