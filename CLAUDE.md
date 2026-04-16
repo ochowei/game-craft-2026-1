@@ -38,4 +38,3 @@ Providers wrap in `App.tsx` in this order (outermost first): `AuthProvider` > `T
 - **Path alias:** `@/*` maps to the project root (configured in both `tsconfig.json` and `vite.config.ts`).
 - **Navigation:** `App.tsx` uses a `Screen` union type (`src/types.ts`) and `useState` to switch between screens. No router.
 - **Testing:** Vitest with jsdom environment and `@testing-library/react`. Setup file: `src/test/setup.ts`. Firebase is mocked via `src/test/firebase-mocks.ts`.
-- **Environment:** `GEMINI_API_KEY` is expected in `.env.local` and exposed via Vite's `define` as `process.env.GEMINI_API_KEY`.
