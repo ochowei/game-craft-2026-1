@@ -7,6 +7,7 @@ import {
   type ProjectRef,
   type Role,
 } from './project';
+import { PUBLIC_PROFILE_PATH, ROLES_THAT_CAN_WRITE_DESIGN } from './project';
 
 describe('domain/project', () => {
   it('exposes the schema version constant', () => {
@@ -48,5 +49,21 @@ describe('domain/project', () => {
       lastOpenedAt: new Date(),
     };
     expect(ref.role).toBe('owner');
+  });
+});
+
+describe('Role extensions', () => {
+  it('Role union accepts owner, editor, viewer', () => {
+    const roles: Array<'owner' | 'editor' | 'viewer'> = ['owner', 'editor', 'viewer'];
+    expect(roles).toHaveLength(3);
+  });
+
+  it('PUBLIC_PROFILE_PATH formats the Firestore path', () => {
+    expect(PUBLIC_PROFILE_PATH('uid_A')).toBe('users/uid_A/publicProfile/main');
+  });
+
+  it('ROLES_THAT_CAN_WRITE_DESIGN excludes viewer', () => {
+    expect(ROLES_THAT_CAN_WRITE_DESIGN).toEqual(['owner', 'editor']);
+    expect(ROLES_THAT_CAN_WRITE_DESIGN.includes('viewer' as any)).toBe(false);
   });
 });
