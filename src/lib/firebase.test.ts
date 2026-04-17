@@ -11,6 +11,17 @@ import {
   mockDocSnapshot,
   createMockUser,
   resetAllMocks,
+  mockCollection,
+  mockQuery,
+  mockWhere,
+  mockGetDocs,
+  mockUpdateDoc,
+  mockDeleteDoc,
+  mockRunTransaction,
+  mockWriteBatch,
+  mockInitializeFirestore,
+  mockPersistentLocalCache,
+  mockOnSnapshotImpl,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules
@@ -24,16 +35,28 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: mockSignInWithPopup,
   signOut: mockSignOut,
   onAuthStateChanged: mockOnAuthStateChanged,
+  connectAuthEmulator: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
+  initializeFirestore: mockInitializeFirestore,
+  persistentLocalCache: mockPersistentLocalCache,
   getFirestore: vi.fn(() => ({})),
   doc: mockDoc,
   getDoc: mockGetDoc,
   setDoc: mockSetDoc,
-  onSnapshot: vi.fn(),
+  onSnapshot: mockOnSnapshotImpl,
   getDocFromServer: mockGetDocFromServer,
   serverTimestamp: mockServerTimestamp,
+  collection: mockCollection,
+  query: mockQuery,
+  where: mockWhere,
+  getDocs: mockGetDocs,
+  updateDoc: mockUpdateDoc,
+  deleteDoc: mockDeleteDoc,
+  runTransaction: mockRunTransaction,
+  writeBatch: mockWriteBatch,
+  connectFirestoreEmulator: vi.fn(),
 }));
 
 import { provisionUserProfile } from './firebase';
@@ -51,7 +74,7 @@ describe('provisionUserProfile', () => {
     await provisionUserProfile(user);
 
     expect(mockSetDoc).toHaveBeenCalledOnce();
-    const [_ref, data] = mockSetDoc.mock.calls[0];
+    const [_ref, data, options] = mockSetDoc.mock.calls[0];
     expect(data).toEqual({
       displayName: 'Test User',
       email: 'test@example.com',
@@ -59,8 +82,22 @@ describe('provisionUserProfile', () => {
       createdAt: { _type: 'serverTimestamp' },
       lastLoginAt: { _type: 'serverTimestamp' },
     });
-    // First-time creation should NOT use merge
-    expect(mockSetDoc.mock.calls[0][2]).toBeUndefined();
+    // First-time creation uses merge so a concurrent lastOpenedProjectId write is preserved
+    expect(options).toEqual({ merge: true });
+  });
+
+  // Spec: Profile carries optional lastOpenedProjectId — provisioning must not clobber it
+  it('uses merge: true on first-time provisioning to preserve concurrent lastOpenedProjectId', async () => {
+    mockGetDoc.mockResolvedValue(mockDocSnapshot(false));
+    const user = createMockUser() as any;
+
+    await provisionUserProfile(user);
+
+    expect(mockSetDoc).toHaveBeenCalledOnce();
+    const [, data, options] = mockSetDoc.mock.calls[0];
+    expect(options).toEqual({ merge: true });
+    expect(data.createdAt).toEqual({ _type: 'serverTimestamp' });
+    expect(data.lastLoginAt).toEqual({ _type: 'serverTimestamp' });
   });
 
   // Spec: User profile updated on subsequent sign-ins

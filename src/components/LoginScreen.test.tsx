@@ -14,6 +14,17 @@ import {
   emitAuthState,
   createMockUser,
   resetAllMocks,
+  mockCollection,
+  mockQuery,
+  mockWhere,
+  mockGetDocs,
+  mockUpdateDoc,
+  mockDeleteDoc,
+  mockRunTransaction,
+  mockWriteBatch,
+  mockInitializeFirestore,
+  mockPersistentLocalCache,
+  mockOnSnapshotImpl,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules
@@ -27,16 +38,28 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: mockSignInWithPopup,
   signOut: mockSignOut,
   onAuthStateChanged: mockOnAuthStateChanged,
+  connectAuthEmulator: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
+  initializeFirestore: mockInitializeFirestore,
+  persistentLocalCache: mockPersistentLocalCache,
   getFirestore: vi.fn(() => ({})),
   doc: mockDoc,
   getDoc: mockGetDoc,
   setDoc: mockSetDoc,
-  onSnapshot: vi.fn(),
+  onSnapshot: mockOnSnapshotImpl,
   getDocFromServer: mockGetDocFromServer,
   serverTimestamp: mockServerTimestamp,
+  collection: mockCollection,
+  query: mockQuery,
+  where: mockWhere,
+  getDocs: mockGetDocs,
+  updateDoc: mockUpdateDoc,
+  deleteDoc: mockDeleteDoc,
+  runTransaction: mockRunTransaction,
+  writeBatch: mockWriteBatch,
+  connectFirestoreEmulator: vi.fn(),
 }));
 
 // Mock motion/react to avoid animation issues in tests
@@ -70,6 +93,10 @@ describe('LoginScreen', () => {
   beforeEach(() => {
     resetAllMocks();
     mockGetDoc.mockResolvedValue(mockDocSnapshot(false));
+    // Default: projectRefs collection empty (so ProjectProvider doesn't error on auth)
+    mockGetDocs.mockResolvedValue({ docs: [], empty: true });
+    // Skip auto-provisioning to keep the authenticated-user test focused on auth gate
+    mockRunTransaction.mockResolvedValue(undefined);
   });
 
   afterEach(() => {

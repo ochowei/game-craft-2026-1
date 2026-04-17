@@ -12,7 +12,7 @@ Established: 2026-04-15
 
 A board game design workspace. Acts as the top-level container for all design elements: Board, Cards, Rules, and Tokens. A single Project can publish multiple Boxes (e.g., different versions or editions).
 
-> Status: concept reserved, not yet implemented as a standalone feature.
+> Status: implemented (Phase 1). Stored at `projects/{projectId}` with reverse index `users/{uid}/projectRefs/{projectId}`. Managed via `ProjectContext` / `ProjectListScreen`. Design domains persist to `projects/{projectId}/design/{board|cards|rules|tokens}`.
 
 ### Box
 

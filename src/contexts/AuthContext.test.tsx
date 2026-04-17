@@ -14,6 +14,17 @@ import {
   emitAuthState,
   createMockUser,
   resetAllMocks,
+  mockCollection,
+  mockQuery,
+  mockWhere,
+  mockGetDocs,
+  mockUpdateDoc,
+  mockDeleteDoc,
+  mockRunTransaction,
+  mockWriteBatch,
+  mockInitializeFirestore,
+  mockPersistentLocalCache,
+  mockOnSnapshotImpl,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules before importing AuthContext
@@ -27,16 +38,28 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: mockSignInWithPopup,
   signOut: mockSignOut,
   onAuthStateChanged: mockOnAuthStateChanged,
+  connectAuthEmulator: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
+  initializeFirestore: mockInitializeFirestore,
+  persistentLocalCache: mockPersistentLocalCache,
   getFirestore: vi.fn(() => ({})),
   doc: mockDoc,
   getDoc: mockGetDoc,
   setDoc: mockSetDoc,
-  onSnapshot: vi.fn(),
+  onSnapshot: mockOnSnapshotImpl,
   getDocFromServer: mockGetDocFromServer,
   serverTimestamp: mockServerTimestamp,
+  collection: mockCollection,
+  query: mockQuery,
+  where: mockWhere,
+  getDocs: mockGetDocs,
+  updateDoc: mockUpdateDoc,
+  deleteDoc: mockDeleteDoc,
+  runTransaction: mockRunTransaction,
+  writeBatch: mockWriteBatch,
+  connectFirestoreEmulator: vi.fn(),
 }));
 
 import { AuthProvider, useAuth } from './AuthContext';

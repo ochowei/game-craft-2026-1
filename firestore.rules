@@ -61,6 +61,54 @@ service cloud.firestore {
       allow create, update: if isOwner(userId) && isValidUserProfile(request.resource.data);
     }
 
+    // ===============================================================
+    // Projects
+    // ===============================================================
+    //
+    // projects/{projectId}
+    //   - ownerId: string (uid of creator)
+    //   - members: map<uid, role>  (Phase 1: only { [ownerId]: 'owner' })
+    //   - name, description?, thumbnail?
+    //   - createdAt, updatedAt, schemaVersion
+    //
+    // projects/{projectId}/design/{docId}
+    //   - design documents: board, cards, rules, tokens
+    //
+    // users/{uid}/projectRefs/{projectId}
+    //   - per-user reverse index: role, addedAt, lastOpenedAt?
+    //
+    // Membership is expressed via `members[auth.uid]` so Phase 2 can add
+    // non-owner roles without changing read/update rules.
+    // ===============================================================
+
+    function isMember(projectData) {
+      return isAuthenticated() && projectData.members[request.auth.uid] != null;
+    }
+
+    function isProjectOwner(projectData) {
+      return isAuthenticated() && request.auth.uid == projectData.ownerId;
+    }
+
+    match /projects/{projectId} {
+      allow read: if isMember(resource.data);
+      allow create: if isAuthenticated()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.resource.data.members[request.auth.uid] == 'owner';
+      allow update: if isMember(resource.data)
+                    && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isProjectOwner(resource.data);
+
+      match /design/{docId} {
+        allow read, write: if isMember(
+          get(/databases/$(database)/documents/projects/$(projectId)).data
+        );
+      }
+    }
+
+    match /users/{userId}/projectRefs/{projectId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

@@ -19,18 +19,21 @@ GameCraft is a board game designer/editor built with React 19, Vite, Tailwind CS
 Each game feature (board, cards, rules, tokens, library) follows the same structure:
 
 1. **`src/domain/<feature>.ts`** — Pure TypeScript types, constants, and defaults (no React). This is the source of truth for the data model.
-2. **`src/contexts/<Feature>Context.tsx`** — React context + `useReducer` for state management. Loads initial state from localStorage via `src/lib/storage.ts`, persists on every state change. Exposes a typed `dispatch` and state values.
+2. **`src/contexts/<Feature>Context.tsx`** — React context for state management. Design domains (rules, cards, board, tokens) use the shared `useFirestoreDoc` hook (`src/hooks/useFirestoreDoc.ts`) to sync state with `projects/{activeProjectId}/design/<feature>`. `LibraryContext` still uses `useReducer` + `loadState`/`saveState` from `src/lib/storage.ts`.
 3. **`src/components/<Feature>Editor.tsx`** — UI component that consumes the context.
 
-To add a new feature domain, replicate this pattern: define types in `domain/`, create a context with reducer and localStorage persistence in `contexts/`, then build the editor component.
+The `Project` aggregate is the top-level container; see `src/domain/project.ts` and `src/contexts/ProjectContext.tsx`. A project owns one Board, one Rules, one Tokens collection, and one Cards collection, all stored as Firestore subdocuments under `projects/{projectId}/design/*`.
 
 ### Provider nesting order
 
-Providers wrap in `App.tsx` in this order (outermost first): `AuthProvider` > `ThemeProvider` > `RulesProvider` > `CardsProvider` > `BoardProvider` > `LibraryProvider` > `TokensProvider`. Auth and Theme are in `main.tsx`; the rest in `App.tsx`.
+Providers wrap in `main.tsx` / `App.tsx` in this order (outermost first):
+`AuthProvider` > `ThemeProvider` > `LibraryProvider` > `SyncStatusProvider` > `ProjectProvider` > `ActiveProjectRoot` (keyed by `activeProjectId`) > `RulesProvider` > `CardsProvider` > `BoardProvider` > `TokensProvider`.
+
+Auth and Theme are in `main.tsx`; the rest in `App.tsx`. `LibraryProvider` sits outside `ProjectProvider` because Library is cross-project. `<ActiveProjectRoot projectKey={activeProjectId}>` forces the four design providers to unmount/remount whenever the active project changes, giving an "open-file" UX that fully resets editor state.
 
 ### Key conventions
 
-- **State persistence:** All domain contexts use `loadState`/`saveState` from `src/lib/storage.ts` with keys prefixed `gamecraft:` (e.g., `gamecraft:board`). No backend persistence yet — everything is localStorage.
+- **State persistence:** The four design domains (Rules, Cards, Board, Tokens) persist to Firestore under `projects/{activeProjectId}/design/*` via the shared `useFirestoreDoc` hook — optimistic local state, 500 ms debounced `setDoc({ merge: true })`, `onSnapshot` last-write-wins. UI-only state (selections, active filters) lives in sibling `useState` and is **not** persisted. `LibraryContext` still uses `loadState`/`saveState` (`src/lib/storage.ts`, key `gamecraft:library`) — it's the only localStorage domain. Project metadata lives at `projects/{pid}` with a reverse index at `users/{uid}/projectRefs/{pid}`; create/delete run in a `runTransaction` so the pair stays consistent.
 - **Auth:** Firebase Google sign-in via `src/lib/firebase.ts`. `AuthContext` gates the app — unauthenticated users see `LoginScreen`.
 - **Theming:** Material Design 3-inspired design tokens defined as CSS custom properties in `src/index.css` under `@theme`. Dark theme is default; `.light` class overrides for light mode. `ThemeContext` manages the toggle.
 - **Styling:** Tailwind v4 with `@tailwindcss/vite` plugin. Custom colors reference the MD3 tokens (e.g., `bg-surface-container`, `text-on-surface`). Glass morphism via `.glass-panel` utility class.

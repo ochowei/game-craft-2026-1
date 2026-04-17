@@ -1,1 +1,1 @@
-export type Screen = 'board' | 'cards' | 'rules' | 'tokens' | 'library' | 'settings';
+export type Screen = 'board' | 'cards' | 'rules' | 'tokens' | 'library' | 'settings' | 'projects';
