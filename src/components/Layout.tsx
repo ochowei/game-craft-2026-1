@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Screen } from '../types';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
+import SaveIndicator from './SaveIndicator';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
   }, [menuOpen]);
 
   const navItems: { id: Screen; icon: string; label: string }[] = [
+    { id: 'projects', icon: 'folder_open', label: 'Projects' },
     { id: 'board', icon: 'grid_view', label: 'Board' },
     { id: 'cards', icon: 'style', label: 'Cards' },
     { id: 'rules', icon: 'gavel', label: 'Rules' },
@@ -41,6 +43,11 @@ export default function Layout({ children, activeScreen, onScreenChange }: Layou
           <span className="text-xl font-bold text-primary tracking-wider font-headline">GameCraft Editor</span>
         </div>
         <div className="flex items-center gap-4">
+          {activeScreen !== 'projects' && (
+            <div className="hidden md:flex items-center mr-2">
+              <SaveIndicator />
+            </div>
+          )}
           <div className="hidden md:flex gap-2 mr-4 border-r border-outline-variant pr-4">
             <button
               onClick={() => onScreenChange('settings')}
