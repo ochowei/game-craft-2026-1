@@ -59,6 +59,7 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: mockDeleteDoc,
   runTransaction: mockRunTransaction,
   writeBatch: mockWriteBatch,
+  collectionGroup: vi.fn(),
   connectFirestoreEmulator: vi.fn(),
 }));
 

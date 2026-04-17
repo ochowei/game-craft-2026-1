@@ -25,6 +25,7 @@ import {
   mockInitializeFirestore,
   mockPersistentLocalCache,
   mockOnSnapshotImpl,
+  mockCollectionGroup,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules before importing AuthContext
@@ -52,6 +53,7 @@ vi.mock('firebase/firestore', () => ({
   getDocFromServer: mockGetDocFromServer,
   serverTimestamp: mockServerTimestamp,
   collection: mockCollection,
+  collectionGroup: mockCollectionGroup,
   query: mockQuery,
   where: mockWhere,
   getDocs: mockGetDocs,

@@ -13,6 +13,7 @@ vi.mock('../lib/firebase', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: (...args: any[]) => mockDoc(...args),
   onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
+  collectionGroup: vi.fn(),
 }));
 
 function TestConsumer() {

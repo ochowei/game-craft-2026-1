@@ -34,6 +34,7 @@ vi.mock('firebase/firestore', () => ({
   persistentLocalCache: vi.fn(),
   doc: mockDoc,
   collection: mockCollection,
+  collectionGroup: vi.fn(),
   query: (ref: any) => ref,
   where: vi.fn((f: string, o: string, v: any) => ({ f, o, v })),
   getDoc: mockGetDoc,

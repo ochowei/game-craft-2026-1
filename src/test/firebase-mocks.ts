@@ -50,6 +50,7 @@ export const mockRunTransaction = vi.fn();
 export const mockWriteBatch = vi.fn();
 export const mockInitializeFirestore = vi.fn(() => ({}));
 export const mockPersistentLocalCache = vi.fn(() => ({ _cache: 'persistent' }));
+export const mockCollectionGroup = vi.fn((_db: any, path: string) => ({ _collectionGroup: path }));
 
 // onSnapshot impl: register callback by path, return an unsubscribe spy
 type SnapshotCb = (snap: any) => void;
@@ -90,6 +91,7 @@ export function resetFirestoreProjectMocks() {
   mockWriteBatch.mockClear();
   mockInitializeFirestore.mockClear().mockReturnValue({});
   mockPersistentLocalCache.mockClear().mockReturnValue({ _cache: 'persistent' });
+  mockCollectionGroup.mockClear();
   mockOnSnapshotImpl.mockClear();
   snapshotRegistry.clear();
 }

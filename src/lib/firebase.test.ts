@@ -22,6 +22,7 @@ import {
   mockInitializeFirestore,
   mockPersistentLocalCache,
   mockOnSnapshotImpl,
+  mockCollectionGroup,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules
@@ -49,6 +50,7 @@ vi.mock('firebase/firestore', () => ({
   getDocFromServer: mockGetDocFromServer,
   serverTimestamp: mockServerTimestamp,
   collection: mockCollection,
+  collectionGroup: mockCollectionGroup,
   query: mockQuery,
   where: mockWhere,
   getDocs: mockGetDocs,
@@ -73,8 +75,12 @@ describe('provisionUserProfile', () => {
 
     await provisionUserProfile(user);
 
-    expect(mockSetDoc).toHaveBeenCalledOnce();
-    const [_ref, data, options] = mockSetDoc.mock.calls[0];
+    expect(mockSetDoc).toHaveBeenCalledTimes(2);
+    const profileCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/profile/main'),
+    );
+    expect(profileCall).toBeTruthy();
+    const [_ref, data, options] = profileCall!;
     expect(data).toEqual({
       displayName: 'Test User',
       email: 'test@example.com',
@@ -93,8 +99,12 @@ describe('provisionUserProfile', () => {
 
     await provisionUserProfile(user);
 
-    expect(mockSetDoc).toHaveBeenCalledOnce();
-    const [, data, options] = mockSetDoc.mock.calls[0];
+    expect(mockSetDoc).toHaveBeenCalledTimes(2);
+    const profileCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/profile/main'),
+    );
+    expect(profileCall).toBeTruthy();
+    const [, data, options] = profileCall!;
     expect(options).toEqual({ merge: true });
     expect(data.createdAt).toEqual({ _type: 'serverTimestamp' });
     expect(data.lastLoginAt).toEqual({ _type: 'serverTimestamp' });
@@ -113,8 +123,12 @@ describe('provisionUserProfile', () => {
 
     await provisionUserProfile(user);
 
-    expect(mockSetDoc).toHaveBeenCalledOnce();
-    const [_ref, data, options] = mockSetDoc.mock.calls[0];
+    expect(mockSetDoc).toHaveBeenCalledTimes(2);
+    const profileCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/profile/main'),
+    );
+    expect(profileCall).toBeTruthy();
+    const [_ref, data, options] = profileCall!;
     // Should use merge to avoid overwriting createdAt
     expect(options).toEqual({ merge: true });
     // Data should NOT include createdAt
@@ -130,7 +144,11 @@ describe('provisionUserProfile', () => {
 
     await provisionUserProfile(user);
 
-    const [, , options] = mockSetDoc.mock.calls[0];
+    const profileCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/profile/main'),
+    );
+    expect(profileCall).toBeTruthy();
+    const [, , options] = profileCall!;
     expect(options).toEqual({ merge: true });
   });
 
@@ -145,7 +163,11 @@ describe('provisionUserProfile', () => {
 
     await provisionUserProfile(user);
 
-    const [, data] = mockSetDoc.mock.calls[0];
+    const profileCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/profile/main'),
+    );
+    expect(profileCall).toBeTruthy();
+    const [, data] = profileCall!;
     expect(data.displayName).toBe('Jane Doe');
     expect(data.email).toBe('jane@example.com');
     expect(data.photoURL).toBe('https://example.com/jane.jpg');
@@ -163,6 +185,47 @@ describe('provisionUserProfile', () => {
       expect.anything(), // db
       'users', 'user-abc', 'profile', 'main'
     );
+  });
+
+  it('mirrors displayName/email/photoURL to publicProfile/main on first sign-in', async () => {
+    mockGetDoc.mockResolvedValue(mockDocSnapshot(false));
+    const user = createMockUser() as any;
+
+    await provisionUserProfile(user);
+
+    expect(mockSetDoc).toHaveBeenCalledTimes(2);
+
+    const publicCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/publicProfile/main'),
+    );
+    expect(publicCall).toBeTruthy();
+    const [, publicData, publicOptions] = publicCall!;
+    expect(publicData).toMatchObject({
+      displayName: 'Test User',
+      email: 'test@example.com',
+      photoURL: 'https://example.com/photo.jpg',
+    });
+    expect(publicData.updatedAt).toEqual({ _type: 'serverTimestamp' });
+    expect(publicOptions).toEqual({ merge: true });
+  });
+
+  it('updates publicProfile on returning sign-in', async () => {
+    mockGetDoc.mockResolvedValue(mockDocSnapshot(true, {
+      displayName: 'Old',
+      email: 'test@example.com',
+      photoURL: 'https://example.com/photo.jpg',
+      createdAt: '2026-01-01T00:00:00Z',
+      lastLoginAt: '2026-01-01T00:00:00Z',
+    }));
+    const user = createMockUser({ displayName: 'New Name' }) as any;
+
+    await provisionUserProfile(user);
+
+    const publicCall = mockSetDoc.mock.calls.find(
+      ([ref]: any[]) => ref._path?.endsWith('/publicProfile/main'),
+    );
+    expect(publicCall).toBeTruthy();
+    expect(publicCall![1].displayName).toBe('New Name');
   });
 });
 
