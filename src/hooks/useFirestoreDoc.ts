@@ -20,10 +20,6 @@ export interface UseFirestoreDocResult<T, A> {
   error?: Error;
 }
 
-function pathToSegments(path: string): string[] {
-  return path.split('/').filter(Boolean);
-}
-
 export function useFirestoreDoc<T, A>(
   path: string,
   opts: UseFirestoreDocOptions<T, A>,
@@ -50,7 +46,7 @@ export function useFirestoreDoc<T, A>(
   useEffect(() => {
     isMountedRef.current = true;
     hydratedRef.current = false;
-    const ref = fsDoc(db, ...pathToSegments(path));
+    const ref = fsDoc(db, path);
 
     let unsubscribe: (() => void) | null = null;
 
@@ -128,7 +124,7 @@ export function useFirestoreDoc<T, A>(
       setStatus('saving');
       setError(undefined);
       try {
-        const ref = fsDoc(db, ...pathToSegments(path));
+        const ref = fsDoc(db, path);
         await setDoc(ref, payload as any, { merge: true });
         if (!isMountedRef.current) return;
         setStatus('saved');
