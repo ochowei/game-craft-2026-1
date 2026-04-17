@@ -16,7 +16,9 @@ import {
   DEFAULT_PROJECT_NAME,
   PROJECT_SCHEMA_VERSION,
   type Project,
+  type Role,
 } from '../domain/project';
+import { lookupUserByEmail } from '../hooks/useUserLookup';
 
 export interface ProjectMeta {
   id: string;
@@ -25,6 +27,7 @@ export interface ProjectMeta {
   thumbnail?: string;
   ownerId: string;
   updatedAt: unknown;
+  role: Role;
 }
 
 interface ProjectContextValue {
@@ -36,6 +39,10 @@ interface ProjectContextValue {
   deleteProject: (projectId: string) => Promise<void>;
   openProject: (projectId: string) => Promise<void>;
   closeActive: () => void;
+  addMember: (projectId: string, email: string, role: Role) => Promise<void>;
+  removeMember: (projectId: string, targetUid: string) => Promise<void>;
+  changeRole: (projectId: string, targetUid: string, newRole: Role) => Promise<void>;
+  leaveProject: (projectId: string) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
@@ -52,6 +59,7 @@ async function loadProjectsForUser(uid: string): Promise<ProjectMeta[]> {
     const pSnap = await getDoc(doc(db, 'projects', id));
     if (!pSnap.exists()) continue;
     const data = pSnap.data() as Project;
+    const role = (data.members?.[uid] ?? 'viewer') as Role;
     metas.push({
       id,
       name: data.name,
@@ -59,6 +67,7 @@ async function loadProjectsForUser(uid: string): Promise<ProjectMeta[]> {
       thumbnail: data.thumbnail,
       ownerId: data.ownerId,
       updatedAt: data.updatedAt,
+      role,
     });
   }
   metas.sort((a, b) => {
@@ -163,6 +172,87 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setActiveProjectId(null);
   }, []);
 
+  const addMember = useCallback(async (projectId: string, email: string, role: Role) => {
+    if (!user) throw new Error('Not signed in');
+    const uid = user.uid;
+    const target = await lookupUserByEmail(email);
+    if (!target) {
+      const err = new Error('User not found') as Error & { code?: string };
+      err.code = 'user-not-found';
+      throw err;
+    }
+
+    const projectRef = doc(db, 'projects', projectId);
+    const refDocRef = doc(db, 'users', target.uid, 'projectRefs', projectId);
+
+    await runTransaction(db, async (tx: any) => {
+      const pSnap = await tx.get(projectRef);
+      if (!pSnap.exists()) throw new Error('Project not found');
+      const current = pSnap.data() as Project;
+      tx.update(projectRef, {
+        members: { ...current.members, [target.uid]: role },
+        updatedAt: serverTimestamp(),
+      });
+      tx.set(refDocRef, {
+        role,
+        addedAt: serverTimestamp(),
+      });
+    });
+
+    setProjects(await loadProjectsForUser(uid));
+  }, [user]);
+
+  const removeMember = useCallback(async (projectId: string, targetUid: string) => {
+    if (!user) throw new Error('Not signed in');
+    const uid = user.uid;
+    const projectRef = doc(db, 'projects', projectId);
+    const refDocRef = doc(db, 'users', targetUid, 'projectRefs', projectId);
+
+    await runTransaction(db, async (tx: any) => {
+      const pSnap = await tx.get(projectRef);
+      if (!pSnap.exists()) throw new Error('Project not found');
+      const current = pSnap.data() as Project;
+      if (targetUid === current.ownerId) {
+        throw new Error('Cannot remove the owner; delete the project instead');
+      }
+      const nextMembers = { ...current.members };
+      delete nextMembers[targetUid];
+      tx.update(projectRef, { members: nextMembers, updatedAt: serverTimestamp() });
+      tx.delete(refDocRef);
+    });
+
+    setProjects(await loadProjectsForUser(uid));
+    if (targetUid === uid && activeProjectId === projectId) setActiveProjectId(null);
+  }, [user, activeProjectId]);
+
+  const changeRole = useCallback(async (projectId: string, targetUid: string, newRole: Role) => {
+    if (!user) throw new Error('Not signed in');
+    const uid = user.uid;
+    const projectRef = doc(db, 'projects', projectId);
+    const refDocRef = doc(db, 'users', targetUid, 'projectRefs', projectId);
+
+    await runTransaction(db, async (tx: any) => {
+      const pSnap = await tx.get(projectRef);
+      if (!pSnap.exists()) throw new Error('Project not found');
+      const current = pSnap.data() as Project;
+      if (targetUid === current.ownerId) {
+        throw new Error('Cannot change the owner role');
+      }
+      tx.update(projectRef, {
+        members: { ...current.members, [targetUid]: newRole },
+        updatedAt: serverTimestamp(),
+      });
+      tx.update(refDocRef, { role: newRole });
+    });
+
+    setProjects(await loadProjectsForUser(uid));
+  }, [user]);
+
+  const leaveProject = useCallback(async (projectId: string) => {
+    if (!user) throw new Error('Not signed in');
+    await removeMember(projectId, user.uid);
+  }, [user, removeMember]);
+
   // Hydrate on auth state change
   useEffect(() => {
     if (!user) {
@@ -223,6 +313,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         deleteProject,
         openProject,
         closeActive,
+        addMember,
+        removeMember,
+        changeRole,
+        leaveProject,
       }}
     >
       {children}
