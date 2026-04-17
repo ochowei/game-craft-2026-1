@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ===============================================================
     // Assumed Data Model
     // ===============================================================
@@ -22,11 +22,11 @@ service cloud.firestore {
     // ===============================================================
     // Helper Functions
     // ===============================================================
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -62,31 +62,49 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // Projects
+    // Public profile (world-readable to authenticated users)
+    // ===============================================================
+
+    function isValidPublicProfile(data) {
+      return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'updatedAt']) &&
+             data.displayName is string &&
+             data.email is string &&
+             data.photoURL is string;
+    }
+
+    match /users/{userId}/publicProfile/main {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) && isValidPublicProfile(request.resource.data);
+    }
+
+    // ===============================================================
+    // Projects (Phase 2: multi-role)
     // ===============================================================
     //
     // projects/{projectId}
-    //   - ownerId: string (uid of creator)
-    //   - members: map<uid, role>  (Phase 1: only { [ownerId]: 'owner' })
-    //   - name, description?, thumbnail?
-    //   - createdAt, updatedAt, schemaVersion
+    //   - ownerId, members map, name, timestamps, schemaVersion
     //
     // projects/{projectId}/design/{docId}
     //   - design documents: board, cards, rules, tokens
     //
     // users/{uid}/projectRefs/{projectId}
-    //   - per-user reverse index: role, addedAt, lastOpenedAt?
-    //
-    // Membership is expressed via `members[auth.uid]` so Phase 2 can add
-    // non-owner roles without changing read/update rules.
+    //   - per-user reverse index
     // ===============================================================
 
     function isMember(projectData) {
       return isAuthenticated() && projectData.members[request.auth.uid] != null;
     }
 
+    function memberRole(projectData) {
+      return projectData.members[request.auth.uid];
+    }
+
     function isProjectOwner(projectData) {
       return isAuthenticated() && request.auth.uid == projectData.ownerId;
+    }
+
+    function canWriteDesign(projectData) {
+      return isMember(projectData) && memberRole(projectData) in ['owner', 'editor'];
     }
 
     match /projects/{projectId} {
@@ -95,18 +113,25 @@ service cloud.firestore {
                     && request.resource.data.ownerId == request.auth.uid
                     && request.resource.data.members[request.auth.uid] == 'owner';
       allow update: if isMember(resource.data)
-                    && request.resource.data.ownerId == resource.data.ownerId;
+                    && request.resource.data.ownerId == resource.data.ownerId
+                    && (isProjectOwner(resource.data)
+                        || request.resource.data.members == resource.data.members);
       allow delete: if isProjectOwner(resource.data);
 
       match /design/{docId} {
-        allow read, write: if isMember(
+        allow read: if isMember(
+          get(/databases/$(database)/documents/projects/$(projectId)).data
+        );
+        allow write: if canWriteDesign(
           get(/databases/$(database)/documents/projects/$(projectId)).data
         );
       }
     }
 
     match /users/{userId}/projectRefs/{projectId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+                   || request.auth.uid == get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId;
     }
 
     // Default deny
