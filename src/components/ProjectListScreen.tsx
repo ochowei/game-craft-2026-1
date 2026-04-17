@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ProjectMeta } from '../contexts/ProjectContext';
+import RoleBadge from './RoleBadge';
 
 interface Props {
   projects: ProjectMeta[];
@@ -7,10 +8,12 @@ interface Props {
   renameProject: (id: string, newName: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   openProject: (id: string) => Promise<void>;
+  leaveProject: (id: string) => Promise<void>;
+  onOpenShare: (id: string) => void;
 }
 
 export default function ProjectListScreen({
-  projects, createProject, renameProject, deleteProject, openProject,
+  projects, createProject, renameProject, deleteProject, openProject, leaveProject, onOpenShare,
 }: Props) {
   const handleCreate = async () => {
     const name = window.prompt('New project name');
@@ -27,6 +30,11 @@ export default function ProjectListScreen({
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     await deleteProject(id);
+  };
+
+  const handleLeave = async (id: string, name: string) => {
+    if (!window.confirm(`Leave "${name}"? You won't be able to rejoin unless re-invited.`)) return;
+    await leaveProject(id);
   };
 
   return (
@@ -48,37 +56,62 @@ export default function ProjectListScreen({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((p) => (
-            <div
-              key={p.id}
-              className="bg-surface-container rounded-xl border border-outline-variant/50 p-4 flex flex-col gap-3"
-            >
-              <button
-                aria-label={`Open ${p.name}`}
-                onClick={() => openProject(p.id)}
-                className="text-left"
+          {projects.map((p) => {
+            const isOwner = p.role === 'owner';
+            return (
+              <div
+                key={p.id}
+                className="bg-surface-container rounded-xl border border-outline-variant/50 p-4 flex flex-col gap-3"
               >
-                <h3 className="text-lg font-bold text-on-surface">{p.name}</h3>
-                {p.description && (
-                  <p className="text-sm text-on-surface-variant mt-1">{p.description}</p>
-                )}
-              </button>
-              <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/40">
                 <button
-                  onClick={() => handleRename(p.id, p.name)}
-                  className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant hover:text-on-surface"
+                  aria-label={`Open ${p.name}`}
+                  onClick={() => openProject(p.id)}
+                  className="text-left"
                 >
-                  Rename
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-lg font-bold text-on-surface">{p.name}</h3>
+                    <RoleBadge role={p.role} />
+                  </div>
+                  {p.description && (
+                    <p className="text-sm text-on-surface-variant mt-1">{p.description}</p>
+                  )}
                 </button>
-                <button
-                  onClick={() => handleDelete(p.id, p.name)}
-                  className="text-xs font-semibold uppercase tracking-widest text-error hover:brightness-110 ml-auto"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/40">
+                  {isOwner ? (
+                    <>
+                      <button
+                        onClick={() => handleRename(p.id, p.name)}
+                        className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant hover:text-on-surface"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        aria-label={`Share ${p.name}`}
+                        onClick={() => onOpenShare(p.id)}
+                        className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant hover:text-on-surface"
+                      >
+                        Share
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id, p.name)}
+                        className="text-xs font-semibold uppercase tracking-widest text-error hover:brightness-110 ml-auto"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      aria-label={`Leave ${p.name}`}
+                      onClick={() => handleLeave(p.id, p.name)}
+                      className="text-xs font-semibold uppercase tracking-widest text-error hover:brightness-110 ml-auto"
+                    >
+                      Leave
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
