@@ -23,6 +23,15 @@ async function seed() {
   });
   console.log('  ✓ User profile (with lastOpenedProjectId)');
 
+  // Public profile (what collection-group email lookup hits)
+  await db.doc(`users/${uid}/publicProfile/main`).set({
+    displayName: 'Test User',
+    email: 'test@example.com',
+    photoURL: 'https://example.com/avatar.png',
+    updatedAt: new Date(),
+  });
+  console.log('  ✓ Public profile for test-user-001');
+
   // User settings
   await db.doc(`users/${uid}/settings/preferences`).set({
     language: 'en',
@@ -82,6 +91,33 @@ async function seed() {
     ],
   });
   console.log('  ✓ Design subdocs (board, cards, rules, tokens)');
+
+  // Second user — shared as editor on the demo project (targets add-by-email flow)
+  const uid2 = 'test-user-002';
+  await db.doc(`users/${uid2}/profile/main`).set({
+    displayName: 'Test Editor',
+    email: 'editor@example.com',
+    photoURL: 'https://example.com/avatar2.png',
+    createdAt: new Date(),
+    lastLoginAt: new Date(),
+  });
+  await db.doc(`users/${uid2}/publicProfile/main`).set({
+    displayName: 'Test Editor',
+    email: 'editor@example.com',
+    photoURL: 'https://example.com/avatar2.png',
+    updatedAt: new Date(),
+  });
+  console.log('  ✓ Second user (test-user-002) + publicProfile');
+
+  await db.doc(`projects/${projectId}`).set(
+    { members: { [uid]: 'owner', [uid2]: 'editor' }, updatedAt: new Date() },
+    { merge: true },
+  );
+  await db.doc(`users/${uid2}/projectRefs/${projectId}`).set({
+    role: 'editor',
+    addedAt: new Date(),
+  });
+  console.log('  ✓ Demo project shared with test-user-002 as editor');
 
   console.log('\nDone! View data at http://localhost:4000/firestore');
   console.log(`Log in as ${uid} in the emulator Auth tab, then reload the app.`);
