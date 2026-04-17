@@ -1,0 +1,104 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import React from 'react';
+import { act, cleanup, render, screen } from '@testing-library/react';
+import {
+  mockDoc,
+  mockGetDoc,
+  mockSetDoc,
+  mockOnSnapshotImpl,
+  mockDocSnapshot,
+  resetAllMocks,
+} from '../test/firebase-mocks';
+
+vi.mock('firebase/app', () => ({ initializeApp: vi.fn(() => ({})) }));
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({})),
+  GoogleAuthProvider: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChanged: vi.fn(),
+  connectAuthEmulator: vi.fn(),
+}));
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  initializeFirestore: vi.fn(() => ({})),
+  persistentLocalCache: vi.fn(),
+  doc: mockDoc,
+  getDoc: mockGetDoc,
+  setDoc: mockSetDoc,
+  onSnapshot: mockOnSnapshotImpl,
+  serverTimestamp: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn(),
+  updateDoc: vi.fn(),
+  deleteDoc: vi.fn(),
+  runTransaction: vi.fn(),
+  writeBatch: vi.fn(),
+  getDocFromServer: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
+}));
+
+import { BoardProvider, useBoard } from './BoardContext';
+import { SyncStatusProvider } from './SyncStatusContext';
+import { DEFAULT_BOARD } from '../domain/board';
+
+function Probe() {
+  const { tiles, selectedTileId, dispatch } = useBoard();
+  return (
+    <div>
+      <span data-testid="count">{tiles.length}</span>
+      <span data-testid="selected">{selectedTileId ?? 'none'}</span>
+      <button data-testid="select" onClick={() => dispatch({ type: 'SELECT_TILE', position: 1 })}>sel</button>
+      <button data-testid="edit" onClick={() => dispatch({ type: 'UPDATE_TILE', position: 0, field: 'name', value: 'X' })}>edit</button>
+    </div>
+  );
+}
+
+describe('BoardContext (Firestore)', () => {
+  beforeEach(() => {
+    resetAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('persists only tiles (not selectedTileId)', async () => {
+    mockGetDoc.mockResolvedValue(mockDocSnapshot(false));
+    render(
+      <SyncStatusProvider>
+        <BoardProvider activeProjectId="p_1"><Probe /></BoardProvider>
+      </SyncStatusProvider>,
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    mockSetDoc.mockClear();
+
+    await act(async () => { screen.getByTestId('edit').click(); });
+    await act(async () => { vi.advanceTimersByTime(500); await Promise.resolve(); });
+
+    expect(mockSetDoc).toHaveBeenCalled();
+    const [ref, payload] = mockSetDoc.mock.calls.at(-1)!;
+    expect(ref._path).toBe('projects/p_1/design/board');
+    expect(Array.isArray(payload.tiles)).toBe(true);
+    expect(payload.selectedTileId).toBeUndefined();
+  });
+
+  it('SELECT_TILE does not trigger a write', async () => {
+    mockGetDoc.mockResolvedValue(mockDocSnapshot(true, { tiles: DEFAULT_BOARD }));
+    render(
+      <SyncStatusProvider>
+        <BoardProvider activeProjectId="p_1"><Probe /></BoardProvider>
+      </SyncStatusProvider>,
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    mockSetDoc.mockClear();
+
+    await act(async () => { screen.getByTestId('select').click(); });
+    await act(async () => { vi.advanceTimersByTime(500); await Promise.resolve(); });
+    expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+});
