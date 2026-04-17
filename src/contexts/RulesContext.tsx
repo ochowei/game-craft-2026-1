@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useReducer } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { Rules, DEFAULT_RULES } from '../domain/rules';
-import { loadState, saveState } from '../lib/storage';
-
-const STORAGE_KEY = 'gamecraft:rules';
+import { useFirestoreDoc, type RemoteSyncAction } from '../hooks/useFirestoreDoc';
+import { useSyncStatus } from './SyncStatusContext';
 
 type RulesAction =
   | { type: 'UPDATE_FIELD'; section: keyof Rules; field: string; value: unknown }
@@ -15,8 +14,10 @@ interface RulesContextValue {
 
 const RulesContext = createContext<RulesContextValue | null>(null);
 
-function rulesReducer(state: Rules, action: RulesAction): Rules {
+function rulesReducer(state: Rules, action: RulesAction | RemoteSyncAction<Rules>): Rules {
   switch (action.type) {
+    case '__REMOTE_SYNC__':
+      return action.value;
     case 'UPDATE_FIELD':
       return {
         ...state,
@@ -32,10 +33,19 @@ function rulesReducer(state: Rules, action: RulesAction): Rules {
   }
 }
 
-export function RulesProvider({ children }: { children: React.ReactNode }) {
-  const [rules, dispatch] = useReducer(rulesReducer, DEFAULT_RULES, () => loadState(STORAGE_KEY, DEFAULT_RULES));
+interface RulesProviderProps {
+  children: React.ReactNode;
+  activeProjectId: string;
+}
 
-  useEffect(() => { saveState(STORAGE_KEY, rules); }, [rules]);
+export function RulesProvider({ children, activeProjectId }: RulesProviderProps) {
+  const { state: rules, dispatch, status } = useFirestoreDoc<Rules, RulesAction>(
+    `projects/${activeProjectId}/design/rules`,
+    { defaults: DEFAULT_RULES, reducer: rulesReducer },
+  );
+
+  const { report } = useSyncStatus();
+  useEffect(() => { report('rules', status); }, [status, report]);
 
   return (
     <RulesContext.Provider value={{ rules, dispatch }}>
