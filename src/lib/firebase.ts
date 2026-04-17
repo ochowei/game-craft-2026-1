@@ -1,6 +1,32 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, getDocFromServer, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  User,
+  connectAuthEmulator,
+} from 'firebase/auth';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  getDocFromServer,
+  serverTimestamp,
+  connectFirestoreEmulator,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  runTransaction,
+  writeBatch,
+} from 'firebase/firestore';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -16,7 +42,9 @@ const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firestoreDatabaseId);
+export const db = firestoreDatabaseId
+  ? initializeFirestore(app, { localCache: persistentLocalCache() }, firestoreDatabaseId)
+  : initializeFirestore(app, { localCache: persistentLocalCache() });
 export const auth = getAuth(app);
 
 if (import.meta.env.VITE_USE_EMULATOR === 'true') {
@@ -60,7 +88,7 @@ export async function provisionUserProfile(user: User) {
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
-    });
+    }, { merge: true });
   }
 }
 
@@ -76,5 +104,20 @@ async function testConnection() {
 }
 testConnection();
 
-export { onAuthStateChanged };
+export {
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  runTransaction,
+  writeBatch,
+  onAuthStateChanged,
+};
 export type { User };
