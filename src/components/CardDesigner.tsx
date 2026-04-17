@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useCards } from '../contexts/CardsContext';
+import { useActiveRole } from '../hooks/useActiveRole';
+import ReadOnlyBanner from './ReadOnlyBanner';
 
 export default function CardDesigner() {
   const { cards, activeDeckType, selectedCardId, dispatch } = useCards();
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const isViewer = useActiveRole() === 'viewer';
 
   const deckCards = cards.filter((c) => c.type === activeDeckType);
   const selectedCard = cards.find((c) => c.id === selectedCardId) ?? null;
@@ -90,6 +93,9 @@ export default function CardDesigner() {
   );
 
   return (
+    <>
+      {isViewer && <ReadOnlyBanner />}
+      <fieldset disabled={isViewer} className="contents">
     <div className="flex h-full overflow-hidden">
       <div className="flex-1 p-4 md:p-8 pb-16 md:pb-8 overflow-y-auto custom-scrollbar">
         <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -228,5 +234,7 @@ export default function CardDesigner() {
         </button>
       </div>
     </div>
+      </fieldset>
+    </>
   );
 }

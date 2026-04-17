@@ -1,15 +1,21 @@
 import React from 'react';
 import { useRules } from '../contexts/RulesContext';
 import { BidIncrement, TimerDuration } from '../domain/rules';
+import { useActiveRole } from '../hooks/useActiveRole';
+import ReadOnlyBanner from './ReadOnlyBanner';
 
 export default function RulesEditor() {
   const { rules, dispatch } = useRules();
+  const isViewer = useActiveRole() === 'viewer';
 
   const updateField = (section: 'economy' | 'players' | 'mechanics' | 'auction', field: string, value: unknown) => {
     dispatch({ type: 'UPDATE_FIELD', section, field, value });
   };
 
   return (
+    <>
+      {isViewer && <ReadOnlyBanner />}
+      <fieldset disabled={isViewer} className="contents">
     <div className="max-w-4xl mx-auto p-4 md:p-8 pb-32">
       <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
@@ -199,5 +205,7 @@ export default function RulesEditor() {
         </section>
       </div>
     </div>
+      </fieldset>
+    </>
   );
 }
