@@ -25,6 +25,7 @@ import {
   mockInitializeFirestore,
   mockPersistentLocalCache,
   mockOnSnapshotImpl,
+  mockCollectionGroup,
 } from '../test/firebase-mocks';
 
 // Mock firebase modules
@@ -59,7 +60,7 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: mockDeleteDoc,
   runTransaction: mockRunTransaction,
   writeBatch: mockWriteBatch,
-  collectionGroup: vi.fn(),
+  collectionGroup: mockCollectionGroup,
   connectFirestoreEmulator: vi.fn(),
 }));
 

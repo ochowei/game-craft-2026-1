@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import React from 'react';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { mockOnSnapshot, mockDoc, resetAllMocks, createMockUser, mockDocSnapshot } from '../test/firebase-mocks';
+import { mockOnSnapshot, mockDoc, resetAllMocks, createMockUser, mockDocSnapshot, mockCollectionGroup } from '../test/firebase-mocks';
 
 vi.mock('../lib/firebase', () => ({
   db: {},
@@ -13,7 +13,7 @@ vi.mock('../lib/firebase', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: (...args: any[]) => mockDoc(...args),
   onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
-  collectionGroup: vi.fn(),
+  collectionGroup: (...args: [any, any]) => mockCollectionGroup(...args),
 }));
 
 function TestConsumer() {

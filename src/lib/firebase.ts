@@ -76,32 +76,21 @@ export async function provisionUserProfile(user: User) {
   const publicProfileRef = doc(db, 'users', user.uid, 'publicProfile', 'main');
   const profileSnap = await getDoc(profileRef);
 
-  const publicPayload = {
+  const userFields = {
     displayName: user.displayName ?? '',
     email: user.email ?? '',
     photoURL: user.photoURL ?? '',
-    updatedAt: serverTimestamp(),
   };
+  const publicPayload = { ...userFields, updatedAt: serverTimestamp() };
 
   if (profileSnap.exists()) {
     await Promise.all([
-      setDoc(profileRef, {
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        lastLoginAt: serverTimestamp(),
-      }, { merge: true }),
+      setDoc(profileRef, { ...userFields, lastLoginAt: serverTimestamp() }, { merge: true }),
       setDoc(publicProfileRef, publicPayload, { merge: true }),
     ]);
   } else {
     await Promise.all([
-      setDoc(profileRef, {
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        createdAt: serverTimestamp(),
-        lastLoginAt: serverTimestamp(),
-      }, { merge: true }),
+      setDoc(profileRef, { ...userFields, createdAt: serverTimestamp(), lastLoginAt: serverTimestamp() }, { merge: true }),
       setDoc(publicProfileRef, publicPayload, { merge: true }),
     ]);
   }
