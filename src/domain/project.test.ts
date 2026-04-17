@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest';
 import {
   PROJECT_SCHEMA_VERSION,
   DEFAULT_PROJECT_NAME,
+  PUBLIC_PROFILE_PATH,
+  ROLES_THAT_CAN_WRITE_DESIGN,
   makeNewProject,
   type Project,
   type ProjectRef,
   type Role,
 } from './project';
-import { PUBLIC_PROFILE_PATH, ROLES_THAT_CAN_WRITE_DESIGN } from './project';
 
 describe('domain/project', () => {
   it('exposes the schema version constant', () => {
@@ -54,7 +55,7 @@ describe('domain/project', () => {
 
 describe('Role extensions', () => {
   it('Role union accepts owner, editor, viewer', () => {
-    const roles: Array<'owner' | 'editor' | 'viewer'> = ['owner', 'editor', 'viewer'];
+    const roles: Role[] = ['owner', 'editor', 'viewer'];
     expect(roles).toHaveLength(3);
   });
 

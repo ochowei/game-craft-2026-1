@@ -3,7 +3,7 @@ export const DEFAULT_PROJECT_NAME = 'My First Project' as const;
 
 export type Role = 'owner' | 'editor' | 'viewer';
 
-export const ROLES_THAT_CAN_WRITE_DESIGN: Role[] = ['owner', 'editor'];
+export const ROLES_THAT_CAN_WRITE_DESIGN = ['owner', 'editor'] as const satisfies readonly Role[];
 
 export function PUBLIC_PROFILE_PATH(uid: string): string {
   return `users/${uid}/publicProfile/main`;
