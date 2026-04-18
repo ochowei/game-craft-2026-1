@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTokens } from '../contexts/TokensContext';
 import { TokenCategory } from '../domain/tokens';
+import { useActiveRole } from '../hooks/useActiveRole';
+import ReadOnlyBanner from './ReadOnlyBanner';
 
 const CATEGORY_TABS: { id: TokenCategory | 'all'; label: string; icon: string }[] = [
   { id: 'all', label: 'All', icon: 'apps' },
@@ -13,6 +15,7 @@ const CATEGORY_TABS: { id: TokenCategory | 'all'; label: string; icon: string }[
 export default function TokensEditor() {
   const { tokens, activeCategory, selectedTokenId, dispatch } = useTokens();
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const isViewer = useActiveRole() === 'viewer';
 
   const filteredTokens = activeCategory === 'all' ? tokens : tokens.filter((t) => t.category === activeCategory);
   const selectedToken = selectedTokenId ? tokens.find((t) => t.id === selectedTokenId) ?? null : null;
@@ -135,6 +138,9 @@ export default function TokensEditor() {
   );
 
   return (
+    <>
+      {isViewer && <ReadOnlyBanner />}
+      <fieldset disabled={isViewer} className="contents">
     <div className="flex h-full overflow-hidden">
       <div className="flex-1 p-4 md:p-8 pb-16 md:pb-8 overflow-y-auto custom-scrollbar">
         <header className="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -236,5 +242,7 @@ export default function TokensEditor() {
         </div>
       </div>
     </div>
+      </fieldset>
+    </>
   );
 }

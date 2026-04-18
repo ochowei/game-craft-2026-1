@@ -19,6 +19,7 @@ import {
   serverTimestamp,
   connectFirestoreEmulator,
   collection,
+  collectionGroup,
   query,
   where,
   getDocs,
@@ -72,23 +73,26 @@ export const logout = () => signOut(auth);
 
 export async function provisionUserProfile(user: User) {
   const profileRef = doc(db, 'users', user.uid, 'profile', 'main');
+  const publicProfileRef = doc(db, 'users', user.uid, 'publicProfile', 'main');
   const profileSnap = await getDoc(profileRef);
 
+  const userFields = {
+    displayName: user.displayName ?? '',
+    email: user.email ?? '',
+    photoURL: user.photoURL ?? '',
+  };
+  const publicPayload = { ...userFields, updatedAt: serverTimestamp() };
+
   if (profileSnap.exists()) {
-    await setDoc(profileRef, {
-      displayName: user.displayName,
-      email: user.email,
-      photoURL: user.photoURL,
-      lastLoginAt: serverTimestamp(),
-    }, { merge: true });
+    await Promise.all([
+      setDoc(profileRef, { ...userFields, lastLoginAt: serverTimestamp() }, { merge: true }),
+      setDoc(publicProfileRef, publicPayload, { merge: true }),
+    ]);
   } else {
-    await setDoc(profileRef, {
-      displayName: user.displayName,
-      email: user.email,
-      photoURL: user.photoURL,
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
-    }, { merge: true });
+    await Promise.all([
+      setDoc(profileRef, { ...userFields, createdAt: serverTimestamp(), lastLoginAt: serverTimestamp() }, { merge: true }),
+      setDoc(publicProfileRef, publicPayload, { merge: true }),
+    ]);
   }
 }
 
@@ -111,6 +115,7 @@ export {
   onSnapshot,
   serverTimestamp,
   collection,
+  collectionGroup,
   query,
   where,
   getDocs,

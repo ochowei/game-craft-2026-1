@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import TokensEditor from './components/TokensEditor';
 import ProjectListScreen from './components/ProjectListScreen';
 import ActiveProjectRoot from './components/ActiveProjectRoot';
+import ShareDialog, { type ShareDialogMember } from './components/ShareDialog';
 import { RulesProvider } from './contexts/RulesContext';
 import { CardsProvider } from './contexts/CardsContext';
 import { BoardProvider } from './contexts/BoardContext';
@@ -18,10 +19,65 @@ import { LibraryProvider } from './contexts/LibraryContext';
 import { TokensProvider } from './contexts/TokensContext';
 import { ProjectProvider, useProjects } from './contexts/ProjectContext';
 import { SyncStatusProvider } from './contexts/SyncStatusContext';
+import { db, doc, getDoc } from './lib/firebase';
 
 function AuthedApp() {
   const [activeScreen, setActiveScreen] = useState<Screen>('rules');
-  const { projects, activeProjectId, loading, createProject, renameProject, deleteProject, openProject, closeActive } = useProjects();
+  const {
+    projects, activeProjectId, loading,
+    createProject, renameProject, deleteProject, openProject, closeActive,
+    addMember, removeMember, changeRole, leaveProject,
+  } = useProjects();
+  const [shareTargetId, setShareTargetId] = useState<string | null>(null);
+  const [shareMembers, setShareMembers] = useState<ShareDialogMember[]>([]);
+
+  const openShare = async (projectId: string) => {
+    setShareTargetId(projectId);
+    const pSnap = await getDoc(doc(db, 'projects', projectId));
+    if (!pSnap.exists()) return;
+    const data = pSnap.data() as any;
+    const uids: string[] = Object.keys(data.members ?? {});
+    const rows: ShareDialogMember[] = [];
+    for (const uid of uids) {
+      const pp = await getDoc(doc(db, 'users', uid, 'publicProfile', 'main'));
+      if (!pp.exists()) continue;
+      const ppData = pp.data() as any;
+      rows.push({
+        uid,
+        displayName: ppData.displayName ?? '',
+        email: ppData.email ?? '',
+        photoURL: ppData.photoURL ?? '',
+        role: data.members[uid],
+      });
+    }
+    setShareMembers(rows);
+  };
+
+  const closeShare = () => {
+    setShareTargetId(null);
+    setShareMembers([]);
+  };
+
+  const shareDialog = shareTargetId && (
+    <ShareDialog
+      projectId={shareTargetId}
+      projectName={projects.find((p) => p.id === shareTargetId)?.name ?? ''}
+      members={shareMembers}
+      addMember={async (pid, email, role) => {
+        await addMember(pid, email, role);
+        await openShare(pid);
+      }}
+      removeMember={async (pid, uid) => {
+        await removeMember(pid, uid);
+        await openShare(pid);
+      }}
+      changeRole={async (pid, uid, role) => {
+        await changeRole(pid, uid, role);
+        await openShare(pid);
+      }}
+      onClose={closeShare}
+    />
+  );
 
   if (loading) {
     return (
@@ -59,7 +115,10 @@ function AuthedApp() {
             await openProject(id);
             setActiveScreen('rules');
           }}
+          leaveProject={leaveProject}
+          onOpenShare={openShare}
         />
+        {shareDialog}
       </Layout>
     );
   }
@@ -85,6 +144,7 @@ function AuthedApp() {
               <Layout activeScreen={activeScreen} onScreenChange={handleScreenChange}>
                 {renderScreen()}
               </Layout>
+              {shareDialog}
             </TokensProvider>
           </BoardProvider>
         </CardsProvider>

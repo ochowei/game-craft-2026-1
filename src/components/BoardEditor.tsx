@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useBoard } from '../contexts/BoardContext';
 import { positionToGridCoords, COLOR_GROUP_CSS, ColorGroup, Tile } from '../domain/board';
+import { useActiveRole } from '../hooks/useActiveRole';
+import ReadOnlyBanner from './ReadOnlyBanner';
 
 const ALL_COLOR_GROUPS: ColorGroup[] = ['brown', 'light-blue', 'pink', 'orange', 'red', 'yellow', 'green', 'dark-blue'];
 
@@ -81,6 +83,7 @@ const TileCell: React.FC<{ tile: Tile; isSelected: boolean; onSelect: () => void
 export default function BoardEditor() {
   const { tiles, selectedTileId, dispatch } = useBoard();
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const isViewer = useActiveRole() === 'viewer';
 
   const selectedTile = selectedTileId !== null ? tiles.find((t) => t.position === selectedTileId) ?? null : null;
 
@@ -201,6 +204,9 @@ export default function BoardEditor() {
   );
 
   return (
+    <>
+      {isViewer && <ReadOnlyBanner />}
+      <fieldset disabled={isViewer} className="contents">
     <div className="flex h-full overflow-hidden">
       {/* Center Canvas */}
       <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-surface-container-lowest">
@@ -285,5 +291,7 @@ export default function BoardEditor() {
         <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Autosaved Just Now</span>
       </div>
     </div>
+      </fieldset>
+    </>
   );
 }

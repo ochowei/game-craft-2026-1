@@ -19,6 +19,12 @@ import {
   resetAllMocks,
 } from '../test/firebase-mocks';
 
+vi.mock('../hooks/useUserLookup', () => ({
+  lookupUserByEmail: vi.fn(),
+}));
+
+import { lookupUserByEmail } from '../hooks/useUserLookup';
+
 vi.mock('firebase/app', () => ({ initializeApp: vi.fn(() => ({})) }));
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
@@ -34,6 +40,7 @@ vi.mock('firebase/firestore', () => ({
   persistentLocalCache: vi.fn(),
   doc: mockDoc,
   collection: mockCollection,
+  collectionGroup: vi.fn(),
   query: (ref: any) => ref,
   where: vi.fn((f: string, o: string, v: any) => ({ f, o, v })),
   getDoc: mockGetDoc,
@@ -336,5 +343,142 @@ describe('ProjectContext', () => {
 
     act(() => { result.current.closeActive(); });
     expect(result.current.activeProjectId).toBe(null);
+  });
+
+  describe('membership actions', () => {
+    it('addMember resolves email + writes project + projectRefs transactionally', async () => {
+      (lookupUserByEmail as any).mockResolvedValueOnce({
+        uid: 'uid_B', displayName: 'Bob', photoURL: 'p.jpg',
+      });
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [{ id: 'p_1', data: () => ({ role: 'owner' }) }],
+        empty: false,
+      });
+      mockGetDoc.mockImplementation((ref: any) => {
+        if (ref._path?.endsWith('/profile/main')) return Promise.resolve(mockDocSnapshot(true, {}));
+        if (ref._path === 'projects/p_1') {
+          return Promise.resolve(mockDocSnapshot(true, {
+            name: 'X', ownerId: 'uid_A',
+            members: { uid_A: 'owner' },
+            updatedAt: { toMillis: () => 1 },
+          }));
+        }
+        return Promise.resolve(mockDocSnapshot(false));
+      });
+      const txUpdate = vi.fn();
+      const txSet = vi.fn();
+      mockRunTransaction.mockImplementation(async (_db: any, fn: any) => {
+        await fn({
+          update: txUpdate, set: txSet, delete: vi.fn(),
+          get: vi.fn().mockResolvedValue(mockDocSnapshot(true, {
+            ownerId: 'uid_A', members: { uid_A: 'owner' },
+          })),
+        });
+      });
+
+      const { result } = renderHook(() => useProjects(), { wrapper: Wrapper });
+      act(() => { emitAuthState(createMockUser({ uid: 'uid_A' })); });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.addMember('p_1', 'bob@example.com', 'editor');
+      });
+
+      expect(txUpdate).toHaveBeenCalled();
+      const [, updateData] = txUpdate.mock.calls[0];
+      expect(updateData.members).toEqual({ uid_A: 'owner', uid_B: 'editor' });
+      expect(txSet).toHaveBeenCalled();
+      const [refDocRef, refData] = txSet.mock.calls[0];
+      expect(refDocRef._path).toBe('users/uid_B/projectRefs/p_1');
+      expect(refData.role).toBe('editor');
+    });
+
+    it('addMember rejects unknown email with user-not-found code', async () => {
+      (lookupUserByEmail as any).mockResolvedValueOnce(null);
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [{ id: 'p_1', data: () => ({ role: 'owner' }) }],
+        empty: false,
+      });
+      mockGetDoc.mockImplementation((ref: any) => {
+        if (ref._path?.endsWith('/profile/main')) return Promise.resolve(mockDocSnapshot(true, {}));
+        if (ref._path === 'projects/p_1') {
+          return Promise.resolve(mockDocSnapshot(true, {
+            name: 'X', ownerId: 'uid_A',
+            members: { uid_A: 'owner' },
+            updatedAt: { toMillis: () => 1 },
+          }));
+        }
+        return Promise.resolve(mockDocSnapshot(false));
+      });
+
+      const { result } = renderHook(() => useProjects(), { wrapper: Wrapper });
+      act(() => { emitAuthState(createMockUser({ uid: 'uid_A' })); });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await expect(async () => {
+        await act(async () => {
+          await result.current.addMember('p_1', 'noone@example.com', 'editor');
+        });
+      }).rejects.toMatchObject({ code: 'user-not-found' });
+    });
+
+    it('removeMember rejects removing the owner', async () => {
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [{ id: 'p_1', data: () => ({ role: 'owner' }) }],
+        empty: false,
+      });
+      mockGetDoc.mockImplementation((ref: any) => {
+        if (ref._path?.endsWith('/profile/main')) return Promise.resolve(mockDocSnapshot(true, {}));
+        if (ref._path === 'projects/p_1') {
+          return Promise.resolve(mockDocSnapshot(true, {
+            name: 'X', ownerId: 'uid_A',
+            members: { uid_A: 'owner' },
+            updatedAt: { toMillis: () => 1 },
+          }));
+        }
+        return Promise.resolve(mockDocSnapshot(false));
+      });
+      mockRunTransaction.mockImplementation(async (_db: any, fn: any) => {
+        await fn({
+          update: vi.fn(), set: vi.fn(), delete: vi.fn(),
+          get: vi.fn().mockResolvedValue(mockDocSnapshot(true, {
+            ownerId: 'uid_A', members: { uid_A: 'owner' },
+          })),
+        });
+      });
+
+      const { result } = renderHook(() => useProjects(), { wrapper: Wrapper });
+      act(() => { emitAuthState(createMockUser({ uid: 'uid_A' })); });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await expect(async () => {
+        await act(async () => {
+          await result.current.removeMember('p_1', 'uid_A');
+        });
+      }).rejects.toThrow(/Cannot remove the owner/);
+    });
+
+    it('role is populated on ProjectMeta for editor member', async () => {
+      mockGetDocs.mockResolvedValueOnce({
+        docs: [{ id: 'p_shared', data: () => ({ role: 'editor' }) }],
+        empty: false,
+      });
+      mockGetDoc.mockImplementation((ref: any) => {
+        if (ref._path?.endsWith('/profile/main')) return Promise.resolve(mockDocSnapshot(true, {}));
+        if (ref._path === 'projects/p_shared') {
+          return Promise.resolve(mockDocSnapshot(true, {
+            name: 'Shared', ownerId: 'uid_A',
+            members: { uid_A: 'owner', uid_B: 'editor' },
+            updatedAt: { toMillis: () => 1 },
+          }));
+        }
+        return Promise.resolve(mockDocSnapshot(false));
+      });
+
+      const { result } = renderHook(() => useProjects(), { wrapper: Wrapper });
+      act(() => { emitAuthState(createMockUser({ uid: 'uid_B' })); });
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.projects[0].role).toBe('editor');
+    });
   });
 });
