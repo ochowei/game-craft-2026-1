@@ -2,7 +2,8 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   User,
@@ -55,17 +56,23 @@ if (import.meta.env.VITE_USE_EMULATOR === 'true') {
 
 const googleProvider = new GoogleAuthProvider();
 
-export const signInWithGoogle = async () => {
+export const signInWithGoogle = async (): Promise<User | null> => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    await signInWithRedirect(auth, googleProvider);
+    return null;
   } catch (error: any) {
-    if (error.code === 'auth/popup-closed-by-user') {
-      console.warn("Sign-in popup was closed by the user before completion.");
-      return null;
-    }
-    console.error("Error signing in with Google:", error);
+    console.error("Error starting Google sign-in redirect:", error);
     throw error;
+  }
+};
+
+export const consumeRedirectResult = async (): Promise<User | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user ?? null;
+  } catch (error: any) {
+    console.error("Error consuming redirect result:", error);
+    return null;
   }
 };
 
