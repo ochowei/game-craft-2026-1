@@ -16,12 +16,8 @@ export function emitAuthState(user: any) {
   }
 }
 
-export const mockSignInWithRedirect = vi.fn().mockResolvedValue(undefined);
-export const mockGetRedirectResult = vi.fn().mockResolvedValue(null);
+export const mockSignInWithPopup = vi.fn();
 export const mockSignOut = vi.fn().mockResolvedValue(undefined);
-
-// Back-compat aliases (kept for tests that haven't been rewritten yet).
-export const mockSignInWithPopup = mockSignInWithRedirect;
 
 // --- Firestore mocks (original) ---
 
@@ -103,8 +99,7 @@ export function resetFirestoreProjectMocks() {
 export function resetAllMocks() {
   authStateCallback = null;
   mockOnAuthStateChanged.mockClear();
-  mockSignInWithRedirect.mockClear().mockResolvedValue(undefined);
-  mockGetRedirectResult.mockClear().mockResolvedValue(null);
+  mockSignInWithPopup.mockClear();
   mockSignOut.mockClear().mockResolvedValue(undefined);
   mockSetDoc.mockClear().mockResolvedValue(undefined);
   mockGetDoc.mockClear();

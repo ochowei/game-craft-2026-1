@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, onAuthStateChanged, signInWithGoogle, consumeRedirectResult, logout, provisionUserProfile, User } from '../lib/firebase';
+import { auth, onAuthStateChanged, signInWithGoogle, logout, provisionUserProfile, User } from '../lib/firebase';
 
 interface AuthContextValue {
   user: User | null;
@@ -15,15 +15,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Consume a pending redirect result on first mount (after Google redirects back).
-    // onAuthStateChanged will also fire with the user; we provision here so the
-    // publicProfile mirror runs before the app renders.
-    consumeRedirectResult().then(async (redirectedUser) => {
-      if (redirectedUser) {
-        await provisionUserProfile(redirectedUser);
-      }
-    });
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -32,9 +23,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async () => {
-    // signInWithRedirect navigates away; this promise resolves with null.
-    // The user object arrives on the next page load via consumeRedirectResult.
-    return signInWithGoogle();
+    const result = await signInWithGoogle();
+    if (result) {
+      await provisionUserProfile(result);
+    }
+    return result;
   };
 
   const signOut = async () => {
