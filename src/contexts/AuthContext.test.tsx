@@ -37,8 +37,6 @@ vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
   GoogleAuthProvider: vi.fn(),
   signInWithPopup: mockSignInWithPopup,
-  signInWithRedirect: mockSignInWithPopup,
-  getRedirectResult: vi.fn().mockResolvedValue(null),
   signOut: mockSignOut,
   onAuthStateChanged: mockOnAuthStateChanged,
   connectAuthEmulator: vi.fn(),
@@ -146,12 +144,10 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('loading').textContent).toBe('false');
   });
 
-  // Spec: Auth context exposes sign-in action — redirect starts successfully
-  // With signInWithRedirect, signIn() resolves with null; the user object arrives
-  // on the next page load via onAuthStateChanged (simulated here by emitAuthState).
+  // Spec: Auth context exposes sign-in action — successful
   it('updates user after successful sign-in', async () => {
     const mockUser = createMockUser();
-    mockSignInWithPopup.mockResolvedValue(undefined);
+    mockSignInWithPopup.mockResolvedValue({ user: mockUser });
 
     renderWithAuth();
     await act(async () => {
@@ -162,7 +158,7 @@ describe('AuthContext', () => {
       screen.getByTestId('sign-in').click();
     });
 
-    // Simulate the post-redirect auth state broadcast.
+    // After signIn, onAuthStateChanged would fire — simulate it
     await act(async () => {
       emitAuthState(mockUser);
     });
@@ -170,8 +166,25 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('user').textContent).toBe('Test User');
   });
 
+  // Spec: Auth context exposes sign-in action — popup closed
+  it('keeps user null when sign-in popup is closed', async () => {
+    mockSignInWithPopup.mockRejectedValue({ code: 'auth/popup-closed-by-user' });
+
+    renderWithAuth();
+    await act(async () => {
+      emitAuthState(null);
+    });
+
+    // signInWithGoogle catches popup-closed and returns null, so signIn resolves
+    await act(async () => {
+      screen.getByTestId('sign-in').click();
+    });
+
+    expect(screen.getByTestId('user').textContent).toBe('null');
+  });
+
   // Spec: Auth context exposes sign-in action — error
-  it('throws error when sign-in fails', async () => {
+  it('throws error when sign-in fails with non-cancellation error', async () => {
     const networkError = new Error('Network error');
     mockSignInWithPopup.mockRejectedValue(networkError);
 

@@ -37,8 +37,6 @@ vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
   GoogleAuthProvider: vi.fn(),
   signInWithPopup: mockSignInWithPopup,
-  signInWithRedirect: mockSignInWithPopup,
-  getRedirectResult: vi.fn().mockResolvedValue(null),
   signOut: mockSignOut,
   onAuthStateChanged: mockOnAuthStateChanged,
   connectAuthEmulator: vi.fn(),
@@ -159,7 +157,7 @@ describe('LoginScreen', () => {
 
   // Spec: Login screen provides Google Sign-In button
   it('displays Google Sign-In button that triggers sign-in', async () => {
-    mockSignInWithPopup.mockResolvedValue(undefined);
+    mockSignInWithPopup.mockResolvedValue({ user: createMockUser() });
 
     renderLoginScreen();
     await act(async () => {
@@ -201,9 +199,9 @@ describe('LoginScreen', () => {
       expect(screen.getByText('Signing in...').closest('button')).toBeDisabled();
     });
 
-    // Resolve sign-in (redirect flow resolves with undefined once navigation starts)
+    // Resolve sign-in
     await act(async () => {
-      resolveSignIn!(undefined);
+      resolveSignIn!({ user: createMockUser() });
     });
 
     // Loading state should be removed
@@ -232,4 +230,26 @@ describe('LoginScreen', () => {
     });
   });
 
+  // Spec: Login screen shows error feedback — cancellation (no error shown)
+  it('does not show error when user cancels sign-in popup', async () => {
+    // signInWithGoogle catches popup-closed and returns null
+    mockSignInWithPopup.mockRejectedValue({ code: 'auth/popup-closed-by-user' });
+
+    renderLoginScreen();
+    await act(async () => {
+      emitAuthState(null);
+    });
+
+    const button = screen.getByText('Sign in with Google').closest('button')!;
+
+    await act(async () => {
+      fireEvent.click(button);
+    });
+
+    // Should not display any error
+    await waitFor(() => {
+      expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/failed/i)).not.toBeInTheDocument();
+    });
+  });
 });
