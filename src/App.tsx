@@ -166,12 +166,12 @@ export default function App() {
   if (!user) return <LoginScreen />;
 
   return (
-    <LibraryProvider>
-      <SyncStatusProvider>
+    <SyncStatusProvider>
+      <LibraryProvider>
         <ProjectProvider>
           <AuthedApp />
         </ProjectProvider>
-      </SyncStatusProvider>
-    </LibraryProvider>
+      </LibraryProvider>
+    </SyncStatusProvider>
   );
 }

@@ -1,10 +1,10 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { SyncStatus } from '../hooks/useFirestoreDoc';
 
-type DomainKey = 'rules' | 'cards' | 'board' | 'tokens';
+type DomainKey = 'rules' | 'cards' | 'board' | 'tokens' | 'library';
 type StatusMap = Record<DomainKey, SyncStatus>;
 
-const INITIAL: StatusMap = { rules: 'idle', cards: 'idle', board: 'idle', tokens: 'idle' };
+const INITIAL: StatusMap = { rules: 'idle', cards: 'idle', board: 'idle', tokens: 'idle', library: 'idle' };
 
 interface ReporterValue {
   report: (key: DomainKey, status: SyncStatus) => void;
