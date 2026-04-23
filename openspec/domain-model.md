@@ -86,7 +86,7 @@ The user's personal collection of reusable components. Stores custom card styles
 
 Library is user-created content, not official/built-in templates.
 
-> Status: implemented. `domain/library.ts` defines user-created items (card-template, tile-preset, color-palette) with `LibraryContext` and `Library` component. Seed data provides starter examples but the model supports user-created content.
+> Status: implemented. `domain/library.ts` defines user-created items (card-template, tile-preset, color-palette) with `LibraryContext` and `Library` component. Persists per-user at `users/{uid}/library/{itemId}` via the shared `useFirestoreCollection` hook; `DEFAULT_LIBRARY` is written to Firestore on first mount for new users.
 
 ### History
 

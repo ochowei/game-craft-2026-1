@@ -66,6 +66,28 @@ export function emitSnapshot(path: string, data: Record<string, any> | null) {
   cb(mockDocSnapshot(data !== null, data ?? undefined));
 }
 
+export function emitCollectionSnapshot(
+  path: string,
+  docs: Array<{ id: string; data: Record<string, any> }>,
+) {
+  const cb = snapshotRegistry.get(path);
+  if (!cb) throw new Error(`No snapshot listener registered for ${path}`);
+  cb({
+    empty: docs.length === 0,
+    size: docs.length,
+    docs: docs.map((d) => ({ id: d.id, data: () => d.data })),
+  });
+}
+
+export function emitSnapshotError(path: string, err: Error) {
+  // onSnapshot is called with (ref, onNext, onError). Our mockOnSnapshotImpl only
+  // stored the onNext callback; for error-path tests, override mockOnSnapshotImpl
+  // directly in the test, or register both. Kept as a no-op helper for clarity.
+  void path;
+  void err;
+  throw new Error('emitSnapshotError: override mockOnSnapshotImpl directly for error cases');
+}
+
 // --- Mock user factory ---
 
 export function createMockUser(overrides?: Partial<{ uid: string; displayName: string; email: string; photoURL: string }>) {

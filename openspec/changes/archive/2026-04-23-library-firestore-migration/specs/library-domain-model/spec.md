@@ -1,33 +1,4 @@
-## ADDED Requirements
-
-### Requirement: LibraryItemType defines component categories
-The system SHALL define `LibraryItemType` as `'card-template' | 'tile-preset' | 'color-palette'`.
-
-#### Scenario: Valid item types
-- **WHEN** a LibraryItem is created
-- **THEN** its `itemType` SHALL be one of the three defined types
-
-### Requirement: LibraryItem defines a reusable component
-The system SHALL define `LibraryItem` with fields: `id` (string), `name` (string), `itemType` (LibraryItemType), `description` (string), `createdAt` (string ISO date), and type-specific `data` payload.
-
-#### Scenario: Card template item
-- **WHEN** a LibraryItem has itemType `'card-template'`
-- **THEN** its `data` SHALL contain card fields: `title`, `description`, `icon`, `accentColor`
-
-#### Scenario: Tile preset item
-- **WHEN** a LibraryItem has itemType `'tile-preset'`
-- **THEN** its `data` SHALL contain tile fields: `tileType`, `colorGroup` (optional), `price` (optional), `rent` (optional RentStructure)
-
-#### Scenario: Color palette item
-- **WHEN** a LibraryItem has itemType `'color-palette'`
-- **THEN** its `data` SHALL contain a `colors` array of hex color strings
-
-### Requirement: Default library contains seed items
-The system SHALL provide a `DEFAULT_LIBRARY` constant with example items demonstrating each item type.
-
-#### Scenario: Seed items present
-- **WHEN** DEFAULT_LIBRARY is used
-- **THEN** it SHALL contain at least one item of each type (card-template, tile-preset, color-palette)
+## MODIFIED Requirements
 
 ### Requirement: LibraryContext provides state and dispatch
 The system SHALL provide a `LibraryContext` that exposes library state and mutation actions. The context SHALL source `items` from Firestore (`users/{uid}/library/{itemId}` subcollection) via a shared `useFirestoreCollection` hook. UI-only state (`activeFilter`) SHALL remain in component state and SHALL NOT be persisted.
@@ -60,63 +31,7 @@ Dispatching `REMOVE_ITEM` SHALL delete the corresponding Firestore document at `
 - **THEN** the document `users/uid_A/library/seed-card-1` SHALL be deleted from Firestore
 - **THEN** the local `items` array SHALL no longer include that item on next snapshot
 
-### Requirement: Library reducer handles SET_FILTER action
-The reducer SHALL handle a `SET_FILTER` action that changes the active type filter.
-
-#### Scenario: Filter by card templates
-- **WHEN** dispatch receives `{ type: 'SET_FILTER', filter: 'card-template' }`
-- **THEN** `activeFilter` SHALL become `'card-template'`
-
-#### Scenario: Show all items
-- **WHEN** dispatch receives `{ type: 'SET_FILTER', filter: 'all' }`
-- **THEN** `activeFilter` SHALL become `'all'`
-
-### Requirement: Library component displays items filtered by type
-The Library component SHALL display library items from context, filtered by the active filter.
-
-#### Scenario: All filter shows everything
-- **WHEN** activeFilter is `'all'`
-- **THEN** all library items SHALL be displayed
-
-#### Scenario: Type filter shows only matching items
-- **WHEN** activeFilter is `'card-template'`
-- **THEN** only items with itemType `'card-template'` SHALL be displayed
-
-### Requirement: Library component has type filter tabs
-The Library component SHALL display filter tabs: All, Card Templates, Tile Presets, Color Palettes.
-
-#### Scenario: User switches filter
-- **WHEN** user clicks the "Tile Presets" tab
-- **THEN** the Library SHALL dispatch `SET_FILTER` with `'tile-preset'` and the grid SHALL update
-
-### Requirement: Library items show type-specific previews
-Each library item card SHALL render a visual preview appropriate to its type.
-
-#### Scenario: Card template preview
-- **WHEN** a card-template item is displayed
-- **THEN** it SHALL show the card icon and title in a mini card preview
-
-#### Scenario: Tile preset preview
-- **WHEN** a tile-preset item is displayed
-- **THEN** it SHALL show the color group color and tile type label
-
-#### Scenario: Color palette preview
-- **WHEN** a color-palette item is displayed
-- **THEN** it SHALL show the palette colors as a row of swatches
-
-### Requirement: Library items can be removed
-Each library item card SHALL have a delete action that dispatches `REMOVE_ITEM`.
-
-#### Scenario: User deletes an item
-- **WHEN** user clicks the delete button on a library item
-- **THEN** the Library SHALL dispatch `REMOVE_ITEM` with that item's id
-
-### Requirement: LibraryProvider wraps the application
-`App.tsx` SHALL wrap the authenticated app content with `LibraryProvider`.
-
-#### Scenario: Provider in component tree
-- **WHEN** the app renders for an authenticated user
-- **THEN** `LibraryProvider` SHALL be an ancestor of `Library` in the component tree
+## ADDED Requirements
 
 ### Requirement: Library persists to Firestore per-user subcollection
 The system SHALL persist Library items as individual Firestore documents under `users/{uid}/library/{itemId}`, where `itemId` equals the `LibraryItem.id` value. Each document's fields SHALL mirror the `LibraryItem` shape.
@@ -195,3 +110,9 @@ Firestore security rules SHALL allow read and write on `users/{userId}/library/{
 #### Scenario: No localStorage writes on dispatch
 - **WHEN** a Library mutation is dispatched
 - **THEN** no call to `localStorage.setItem('gamecraft:library', ...)` occurs
+
+## REMOVED Requirements
+
+### Requirement: LibraryContext initializes from localStorage
+**Reason:** Library is now Firestore-backed. `LibraryProvider` subscribes to `users/{uid}/library/*` via `onSnapshot`; `DEFAULT_LIBRARY` is written to Firestore on first mount for new users rather than used as a local fallback. Superseded by the new "Library persists to Firestore per-user subcollection" and "Library auto-seeds on first load for new users" requirements.
+**Migration:** None. Existing `gamecraft:library` localStorage entries are abandoned. Users testing in dev see `DEFAULT_LIBRARY` re-seeded once on first sign-in to the new build.

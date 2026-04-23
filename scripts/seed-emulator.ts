@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { DEFAULT_LIBRARY } from '../src/domain/library';
 
 // When FIRESTORE_EMULATOR_HOST is set, the Admin SDK connects to the emulator
 // automatically — no credentials needed.
@@ -42,6 +43,14 @@ async function seed() {
     updatedAt: new Date(),
   });
   console.log('  ✓ User settings');
+
+  // Library seed — mirrors the auto-seed behavior in LibraryProvider for the test user
+  const libraryBatch = db.batch();
+  for (const item of DEFAULT_LIBRARY) {
+    libraryBatch.set(db.doc(`users/${uid}/library/${item.id}`), item);
+  }
+  await libraryBatch.commit();
+  console.log(`  ✓ Library seed (${DEFAULT_LIBRARY.length} items) for test-user-001`);
 
   // Demo project + reverse-index projectRef
   await db.doc(`projects/${projectId}`).set({
